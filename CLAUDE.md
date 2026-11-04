@@ -106,3 +106,9 @@ The Angular CLI needs Node.js ≥24.15; the pnpm-managed Node.js 24.22.2 (devEng
   right after, as an exception ("这次是特例, 全合并到 initial commit 里然后 force push", 2026-11-04).
 - Toasts, the new-version notice included, keep Material 3's inverse colours (dark on a light theme, light on a
   dark one); the user accepted this on 2026-11-04 ("那行那就这样").
+- Cloudflare R2 is a second kind of storage (the user asked for it on 2026-11-04). A session uses one kind,
+  GitHub or R2, not both: "二选一, 反正登录是记忆的, 退出登录以后可以像steam选择用户一样一键登录所以并不麻烦"; so
+  signed-in accounts are remembered and listed on the sign-in page for one-click sign-in. An R2 bucket must have a
+  public address (custom domain or r2.dev); the user chose this over allowing buckets without one.
+- Importing and syncing images between GitHub and R2, in both directions, is to be built later, not with the first
+  R2 version: "双向互导、同步功能要做, 不过你先记下来这个计划, 这次先不做" (2026-11-04; milestone 10 in the spec).

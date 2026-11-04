@@ -1,7 +1,8 @@
 # PiCG functional specification
 
-PiCG stores images in GitHub repositories and gives out links to them. It is a static web app that talks to the
-GitHub REST API from the browser with a fine-grained personal access token. This document describes what the app
+PiCG stores images in GitHub repositories or Cloudflare R2 buckets and gives out links to them. It is a static web
+app that talks to the GitHub REST API with a fine-grained personal access token, or to the S3-compatible API of R2
+with an R2 API token, straight from the browser. This document describes what the app
 does. It is the only input for the implementation: the code is written from it and from the documentation of the
 libraries and APIs it names.
 
@@ -10,7 +11,7 @@ libraries and APIs it names.
 - The project is licensed under Apache-2.0. Nothing is copied, ported or translated from PicX or from the `main`
   branch of this repository (which is derived from PicX): no code, no comments, no interface text, no images. Where
   PicX had its own implementation, PiCG uses a third-party library or writes its own from this document.
-- Reading the data formats of earlier versions so they can be imported (section 9) is allowed; the importer is
+- Reading the data formats of earlier versions so they can be imported (section 10) is allowed; the importer is
   written from the description of those formats in this document.
 - Every dependency must be under a license compatible with Apache-2.0 (MIT, BSD, ISC, Apache-2.0 and the like).
 - The PiCG logo (`logo.svg`, `logo-tile.svg`) is the author's own work and is reused.
@@ -25,6 +26,7 @@ libraries and APIs it names.
 | Theme icons   | `bootstrap-icons` (`sun-fill`, `moon-stars-fill`, as on the Apache Airflow site)               | MIT             |
 | Image codecs  | jSquash (`@jsquash/webp`, `@jsquash/avif`, `@jsquash/jpeg`, `@jsquash/png`, `@jsquash/resize`) | Apache-2.0      |
 | Settings file | `smol-toml`                                                                                    | BSD-3-Clause    |
+| R2 requests   | `aws4fetch` (AWS Signature Version 4 with Web Crypto)                                          | MIT             |
 | Date formats  | `date-fns` (`format`, Unicode tokens such as `yyyy/MM`)                                        | MIT             |
 | Offline       | `@angular/service-worker`                                                                      | MIT             |
 | Tooling       | pnpm, TypeScript, ESLint, Prettier, Stylelint                                                  | MIT and similar |
@@ -49,6 +51,20 @@ Layout: a top bar with the logo and the account menu, and a side navigation (lib
 that can be collapsed. On phones the side navigation becomes a bottom bar.
 
 ## 4. Login
+
+A session uses one kind of storage: a GitHub account with its repositories, or an R2 account with its buckets
+(section 9). Switching to the other kind means signing out and picking another account, which is one click since
+accounts are remembered.
+
+**Remembered accounts.** Every account signed in on this device is remembered, unless it is removed when signing
+out. When there are any, the sign-in page lists them first, like choosing a user on Steam: one card per account
+(GitHub: avatar, login and repository names; R2: bucket names and the start of the account ID), sorted by last
+use. A click signs in with it: the check runs again with the stored token or keys, and if it fails the form opens
+filled in with that account and the reason. Each card has a remove button, which asks first and then deletes the
+account's token or keys and its cached settings from the device. "Use another account" opens the form; without
+remembered accounts the form shows directly.
+
+**Form.** Two tabs, GitHub (the default) and Cloudflare R2 (section 9). The GitHub tab is described below.
 
 One page holds everything needed to sign in. It opens with a greeting, "{greeting}, welcome to PiCG", where the
 greeting is picked at random on each visit from those for the time of day (morning from 5:00, afternoon from
@@ -94,8 +110,10 @@ reads and writes (images, settings, `CNAME`) is on the chosen branch, the image 
 PiCG reads the repository's default branch again; if it changed (the branch was renamed on GitHub), PiCG switches
 to it, saves that in the session and says so.
 
-**Storage.** The token is kept in `localStorage` in obfuscated form (not encryption; the key ships with the app).
-Logging out asks whether to keep the token and settings on this device (default) or remove them.
+**Storage.** Tokens and R2 secret keys are kept in `localStorage` in obfuscated form (not encryption; the key ships
+with the app). Logging out asks whether to keep the account on this device (default), so it stays on the sign-in
+page, or remove it with its cached settings. Sessions stored by earlier versions become a remembered GitHub
+account.
 
 ## 5. Library
 
@@ -168,9 +186,12 @@ Setting **upload right after adding** (off by default) starts the upload as soon
 
 Settings are grouped on one scrolling page:
 
-- **Account and repositories:** user, token (masked, replaceable, which reruns the check), list of repositories
+- **Account and repositories (GitHub):** user, token (masked, replaceable, which reruns the check), list of repositories
   with add and remove (adding reruns the check, and accepts `name@branch`), the branch of each repository (pick an
   existing branch or create one from the current branch), log out.
+- **Account and buckets (R2):** account ID, Access Key ID (masked), replace keys (reruns the check), list of
+  buckets with their public addresses, which can be edited, with add and remove (adding reruns the check), log
+  out.
 - **Upload:** upload right after adding; default subfolder choice (none, time-based, custom) and the custom name;
   time format (date-fns tokens, with a live preview and a few presets: `yyyy/MM`, `yyyyMMdd`, `yyyy/MM/dd`);
   whether new queue items get a hash; whether they get the prefix, and its text; whether to remove metadata (on by
@@ -180,15 +201,16 @@ Settings are grouped on one scrolling page:
 - **Compression:** whether new batches are compressed; encoder (WebP, AVIF, MozJPEG); quality.
 - **Watermark:** whether new batches get a watermark; text, size, color, opacity, position (four corners and
   center), with a preview.
-- **Links:** link rule (section 7), link format (section 7), GitHub Pages status and custom domain (section 8).
+- **Links:** link rule (section 7), link format (section 7), and for GitHub the Pages status and custom domain
+  (section 8).
 - **Appearance (this device only):** theme (system, light, dark), language (system, 简体中文, 繁體中文, English, 日本語),
   motion (system, on, off).
 
 ### 6.1 Where settings live
 
 - Appearance is stored only in `localStorage` of the device.
-- Everything else (except account data) is stored per image repository in `.picg/settings.toml` on its default
-  branch, and cached in `localStorage`.
+- Everything else (except account data) is stored per image repository in `.picg/settings.toml` on its image
+  branch, or per bucket in `.picg/settings.toml` in the bucket, and cached in `localStorage`.
 - On opening a repository the app reads its settings file; the file wins over the cache. A repository without a
   settings file starts with the current settings and gets the file on the first change.
 - Every change is written back after a debounce of 3 seconds, as one commit per write
@@ -255,6 +277,10 @@ segment). Built-in rules:
 | `statically` | Statically              | `https://cdn.statically.io/gh/{owner}/{repo}@{branch}/{path}`   |
 | `jsdmirror`  | jsDelivr mirror (China) | `https://cdn.jsdmirror.com/gh/{owner}/{repo}@{branch}/{path}`   |
 
+For an R2 bucket the only built-in rule is `r2` (Cloudflare R2, `{public}/{path}`, where `{public}` is the
+bucket's public address), and the GitHub rules are not offered; the placeholders are `{bucket}`, `{public}` and
+`{path}`.
+
 Custom rules can be added, edited and removed; a template must contain `{path}` and start with `https://`.
 
 **Formats** wrap the URL: `url` (the URL alone), `markdown` (`![{name}]({url})`), `html`
@@ -280,14 +306,95 @@ GitHub Pages publishes the image branch itself; there is no deploy step.
   site in grey as its placeholder, the address links then use.
 - Status is checked on start, on opening settings and on switching repositories.
 
-## 9. Importing data from PicX and earlier versions
+## 9. Cloudflare R2
+
+PiCG can keep images in Cloudflare R2 buckets instead of GitHub repositories. It uses the S3-compatible API of R2,
+`https://{account_id}.r2.cloudflarestorage.com` (or a jurisdiction endpoint such as
+`https://{account_id}.eu.r2.cloudflarestorage.com`), with requests signed by AWS Signature Version 4 (region
+`auto`, service `s3`) from an R2 API token's Access Key ID and Secret Access Key. The Cloudflare REST API is not
+used.
+
+**Sign-in tab.** Short steps with links: create a bucket; connect a custom domain to it, or turn on its `r2.dev`
+address (which Cloudflare limits and does not recommend for production); add a CORS policy (section below) in the
+bucket's settings; create an R2 API token with Object Read & Write, limited to the bucket. Fields:
+
+1. S3 API address, as the bucket's settings page shows it: `https://{account_id}.r2.cloudflarestorage.com/{bucket}`.
+   The endpoint and the bucket name are taken from it.
+2. Access Key ID and Secret Access Key (masked, with a show button).
+3. Public address: the bucket's custom domain or `r2.dev` address, starting with `https://`. It is required:
+   links and thumbnails use it.
+
+**CORS policy.** Browsers block requests to the bucket unless its CORS policy allows PiCG's origin, and PiCG
+cannot set the policy itself before it is allowed. The sign-in tab shows the policy to paste into the dashboard
+(bucket > Settings > CORS policy) with a copy button, filled in with the origin PiCG runs on:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://picg.lu.fm"],
+    "AllowedMethods": ["GET", "PUT", "DELETE", "HEAD"],
+    "AllowedHeaders": [
+      "authorization",
+      "content-type",
+      "x-amz-content-sha256",
+      "x-amz-date",
+      "x-amz-copy-source",
+      "if-match",
+      "if-none-match"
+    ],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**Check at sign-in.** Rejected, with a message saying why:
+
+- an address that is not an R2 S3 API address with a bucket name;
+- a request the browser blocks or that does not reach R2: most likely the CORS policy is missing or does not list
+  this origin, and the message says so with the policy (or that the device is offline, when it is);
+- keys R2 does not accept (the Secret Access Key is cleared);
+- a bucket that does not exist, or that the keys cannot read;
+- keys that cannot write: PiCG writes `.picg/check` and deletes it again.
+
+Whether the token can also reach other buckets cannot be checked (a bucket-scoped token cannot list buckets, and
+the account-level API sends no CORS headers), so the help text asks for a token limited to the bucket.
+
+**More buckets.** Settings can add buckets reachable with the same keys, each with its own public address. The
+library switches between them as it does between repositories.
+
+**Library on R2.**
+
+- The bucket is listed with ListObjectsV2, 1000 keys per request, up to 100,000 objects; past that the page says
+  some files are missing. Keys ending in `/` (folders made in the Cloudflare dashboard) are folders. Images and
+  hidden paths are picked as for repositories.
+- Uploading puts each image with its own request, with `If-None-Match: *` (so a name taken in the meantime is
+  refused) and the image's Content-Type, four at a time. Each item succeeds or fails on its own; the links of the
+  uploaded ones are copied. The 1000-file folder limit is a GitHub one and does not apply.
+- Rename copies the object to the new key and deletes the old one; if the delete fails, both exist and the
+  message says so. Delete removes each object with its own request, six at a time, and reports how many failed.
+- New folders exist only in the app until something is uploaded into them, as with Git.
+- Properties: path, size, dimensions, last modified time and ETag.
+- Thumbnails and the preview load from the public address; when a thumbnail fails, the card says the image is not
+  reachable at the public address.
+- Import from another repository (section 5), GitHub Pages (section 8) and the import from earlier versions
+  (section 10) are GitHub only and not shown.
+
+**Settings** live in `.picg/settings.toml` in the bucket, in the format of section 6.2. A write sends `If-Match`
+with the ETag last read, or `If-None-Match: *` when there was no file; a 412 answer means the file changed
+elsewhere and is handled as in section 6.1. A new bucket's link rule is `r2`.
+
+**Errors** are mapped to the same kinds as GitHub's (unauthorized, forbidden, not found, conflict for 412, server,
+network), plus "blocked by the browser" for requests that fail before an answer arrives.
+
+## 10. Importing data from PicX and earlier versions
 
 A separate module, `legacy`, detects data written by PicX (https://github.com/XPoet/picx, both v3.0.x and the
 later versions up to v3.2.1) and by earlier PiCG versions, which were based on PicX v3.0.2. It translates the data
 into the current model and removes PiCG's own old data when the user agrees. Nothing else in the app reads the old
 formats.
 
-### 9.1 What it reads
+### 10.1 What it reads
 
 Browser storage of the same origin. Browser storage is per site, so PicX data is only there when PiCG is served
 from the address PicX was served from. Each key is looked up with three prefixes, most recent first: `PICG_`
@@ -311,7 +418,7 @@ the image branch and then on the default branch: PicX up to v3.0.x always read a
 branch, and later versions read `.deploy` there. Later PicX writes `.settings` as UTF-8 JSON in Base64; PicX up to
 v3.0.x encoded the JSON without UTF-8, so a file that is not valid UTF-8 is read as Latin-1.
 
-### 9.2 Settings model and translation
+### 10.2 Settings model and translation
 
 The same model is used by both PicX versions and by earlier PiCG; later PicX added fields, marked below.
 
@@ -335,7 +442,7 @@ Ignored fields: `imageName.enableTimestamp`, `management.sort`, `deploy.customDo
 `CNAME`, which PiCG reads), `watermark.rotate`, `watermark.gap`, `starred`, `showAnnouncement`. Missing or malformed
 fields fall back to defaults; the import never fails as a whole.
 
-### 9.3 Old token obfuscation
+### 10.3 Old token obfuscation
 
 Values start with `obs1:`; the rest is Base64 of an 8-byte random IV followed by the token bytes XORed with a
 keystream. Keystream: start with the 32-bit FNV-1a offset basis `0x811c9dc5`; for each byte of the UTF-8 string
@@ -343,7 +450,7 @@ keystream. Keystream: start with the 32-bit FNV-1a offset basis `0x811c9dc5`; fo
 state is 0 use 1. Each keystream byte comes from one xorshift32 step (`s ^= s << 13; s ^= s >>> 17; s ^= s << 5`)
 and is the low 8 bits of the state. A value without the prefix is plain text.
 
-### 9.4 Flow
+### 10.4 Flow
 
 1. After login, or on opening a repository that has `.settings` but no `.picg/settings.toml`, the module
    translates the old data and the app uses the result right away.
@@ -358,7 +465,7 @@ and is the low 8 bits of the state. A value without the prefix is plain text.
 3. Browser data with no repository data is converted without asking once the user has logged in, since nothing
    leaves the device.
 
-## 10. Toolbox
+## 11. Toolbox
 
 Works without login and never touches GitHub.
 
@@ -366,7 +473,7 @@ Works without login and never touches GitHub.
 - **To Base64:** pick or paste an image, copy the data URL.
 - **Watermark:** same options as the upload watermark, preview, download.
 
-## 11. Interface text and accessibility
+## 12. Interface text and accessibility
 
 - Languages: Simplified Chinese, Traditional Chinese with Taiwan wording, English, Japanese. Follows the browser by
   default. The top bar has a language menu and a theme button, which switches between light and dark and shows
@@ -393,7 +500,7 @@ Works without login and never touches GitHub.
   if the stylesheet or the first font does not arrive within 3 seconds, from npmmirror instead. Stylesheets carry
   integrity hashes (the same files on both). System fonts until they arrive; the service worker caches them.
 
-## 12. Offline and deployment
+## 13. Offline and deployment
 
 - Installable PWA; the app shell works offline, API calls need the network. The service worker looks for a new
   version when the app is opened, every ten minutes while it stays open and whenever it comes back into view (as
@@ -402,7 +509,7 @@ Works without login and never touches GitHub.
   deploys the build straight to GitHub Pages (Pages source: GitHub Actions, no publishing branch); the domain is set
   in the Pages settings and kept in `public/CNAME`.
 
-## 13. Milestones
+## 14. Milestones
 
 1. Skeleton: project, lint and format setup, license files, layout and navigation, translation service, themes.
 2. GitHub client and login: token check, repository preparation, token storage, logout.
@@ -412,3 +519,6 @@ Works without login and never touches GitHub.
 6. Links and GitHub Pages.
 7. Legacy import module.
 8. Toolbox, import from another repository, PWA, deployment workflow, README.
+9. Cloudflare R2: one storage interface for repositories and buckets, the R2 client and its fake for the
+   end-to-end tests, the R2 sign-in tab and remembered accounts, R2 settings and links.
+10. Later: importing and syncing images between GitHub repositories and R2 buckets, in both directions.
