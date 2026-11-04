@@ -29,9 +29,11 @@
     {{ 'settings.link_sample' | t }} <code>{{ sample() }}</code>
   </p>
 
-  <h3>GitHub Pages</h3>
-  <pg-pages-notice />
-  @if (pagesSelected() || domain()) {
+  @if (!isR2()) {
+    <h3>GitHub Pages</h3>
+    <pg-pages-notice />
+  }
+  @if (!isR2() && (pagesSelected() || domain())) {
     <div class="row domain">
       <mat-form-field>
         <mat-label>{{ 'settings.domain' | t }}</mat-label>

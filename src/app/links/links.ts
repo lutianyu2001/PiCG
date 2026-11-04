@@ -34,6 +34,17 @@ export const BUILT_IN_RULES: readonly LinkTemplate[] = [
   }
 ]
 
+export const R2_RULE = 'r2'
+
+/** The rules of a bucket: GitHub's do not apply to it. */
+export const R2_RULES: readonly LinkTemplate[] = [
+  { id: R2_RULE, name: 'Cloudflare R2', template: '{public}/{path}', builtIn: true }
+]
+
+export type StorageKind = 'github' | 'r2'
+
+export const builtInRules = (kind: StorageKind) => (kind === 'r2' ? R2_RULES : BUILT_IN_RULES)
+
 export const BUILT_IN_FORMATS: readonly LinkTemplate[] = [
   { id: 'url', name: 'URL', template: '{url}', builtIn: true },
   { id: 'markdown', name: 'Markdown', template: '![{name}]({url})', builtIn: true },
@@ -41,8 +52,8 @@ export const BUILT_IN_FORMATS: readonly LinkTemplate[] = [
   { id: 'bbcode', name: 'BBCode', template: '[img]{url}[/img]', builtIn: true }
 ]
 
-export const allRules = (link: LinkSettings): LinkTemplate[] => [
-  ...BUILT_IN_RULES,
+export const allRules = (link: LinkSettings, kind: StorageKind = 'github'): LinkTemplate[] => [
+  ...builtInRules(kind),
   ...link.rules.map((r) => ({ ...r, builtIn: false }))
 ]
 
@@ -52,11 +63,15 @@ export const allFormats = (link: LinkSettings): LinkTemplate[] => [
 ]
 
 export interface LinkContext {
+  kind: StorageKind
   owner: string
   repo: string
   branch: string
   /** GitHub Pages base URL without a trailing slash. */
   pages: string
+  bucket: string
+  /** Public address of the bucket without a trailing slash. */
+  public: string
 }
 
 const encodePath = (path: string) => path.split('/').map(encodeURIComponent).join('/')
@@ -71,6 +86,8 @@ export function buildUrl(rule: string, ctx: LinkContext, path: string) {
     repo: ctx.repo,
     branch: encodeURIComponent(ctx.branch),
     pages: ctx.pages.replace(/\/+$/, ''),
+    bucket: ctx.bucket,
+    public: ctx.public.replace(/\/+$/, ''),
     path: encodePath(path)
   })
 }

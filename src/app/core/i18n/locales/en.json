@@ -34,9 +34,9 @@
     "github_profile": "GitHub profile",
     "sign_out": "Sign out",
     "sign_out_title": "Sign out of PiCG?",
-    "keep_data": "Keep the token and settings on this device",
-    "keep_note": "Next time the sign-in form is already filled in.",
-    "remove_note": "The token, the repository list and the cached settings are removed from this browser. Theme and language stay."
+    "keep_data": "Keep this account on this device",
+    "keep_note": "It stays on the sign-in page, where one click signs in with it again.",
+    "remove_note": "The account's token or keys and its cached settings are removed from this browser. Theme and language stay."
   },
   "api_error": {
     "network": "Could not reach GitHub. Check the connection and try again.",
@@ -73,7 +73,7 @@
       "friday": "Happy Friday",
       "weekend": "Enjoy the weekend"
     },
-    "subtitle": "Keep images in your own GitHub repository and share them with links.",
+    "subtitle": "Keep images in your own GitHub repository or Cloudflare R2 bucket and share them with links.",
     "step_repo": "Create a public repository, for example {repo}:",
     "step_repo_link": "create repository",
     "step_repo_branch": "Recommended: name its default branch gh-pages, so that PiCG and GitHub Pages use the same branch. For an existing repository, rename the branch on the repository's Branches page; PiCG follows the rename.",
@@ -112,7 +112,15 @@
     },
     "create_branch_title": "Create branch {branch}?",
     "create_branch_message": "{repo} has no branch named {branch}. Create it from the default branch?",
-    "create_branch": "Create branch"
+    "create_branch": "Create branch",
+    "accounts": "Accounts on this device",
+    "use_account": "Sign in as {name}",
+    "forget": "Remove from this device",
+    "forget_title": "Remove this account?",
+    "forget_message": "{name} and its cached settings are removed from this device. The images stay where they are.",
+    "another_account": "Use another account",
+    "back_to_accounts": "Back to accounts",
+    "provider": "Where to keep images"
   },
   "library": {
     "repository": "Repository",
@@ -161,7 +169,10 @@
     "next": "Next",
     "path_edit": "Folder path, editable",
     "path_placeholder": "Root folder",
-    "path_invalid": "There is no folder {name} here. Choose an existing folder, or create it with New folder."
+    "path_invalid": "There is no folder {name} here. Choose an existing folder, or create it with New folder.",
+    "truncated_r2": "The bucket holds more than 100,000 files, so some are missing here.",
+    "local_folder_r2": "This folder exists only in PiCG until something is uploaded into it, because R2 keeps no empty folders.",
+    "not_public": "Not at the public address"
   },
   "links": {
     "copy": "Copy link",
@@ -231,7 +242,7 @@
     "sync_saving": "Saving to {repo}…",
     "sync_saved": "Saved to {repo}.",
     "sync_blocked": "This repository has settings saved by PicX or an earlier PiCG. Settings are not saved to the repository until they are converted.",
-    "sync_error": "Settings could not be saved to the repository. They are kept on this device.",
+    "sync_error": "Settings could not be saved to {repo}. They are kept on this device.",
     "account": "Account and repositories",
     "user": "GitHub user",
     "token": "Token",
@@ -329,7 +340,24 @@
     "branch_note": "Images, settings and CNAME are read from and written to this branch. GitHub Pages publishes only one branch, so GitHub Pages links work only if Pages publishes this one. A branch named gh-pages is recommended.",
     "branch_changed": "{repo} now uses the {branch} branch",
     "strip_metadata": "Remove photo metadata",
-    "strip_metadata_desc": "Removes EXIF and similar data, such as where and with which camera a photo was taken, from JPEG, PNG and WebP files uploaded without compression. Compressed and watermarked images never keep it. Orientation and colour profiles are kept."
+    "strip_metadata_desc": "Removes EXIF and similar data, such as where and with which camera a photo was taken, from JPEG, PNG and WebP files uploaded without compression. Compressed and watermarked images never keep it. Orientation and colour profiles are kept.",
+    "r2_account": "Account and buckets",
+    "r2_account_id": "Account ID",
+    "replace_keys": "Replace keys",
+    "replace_keys_hint": "The new keys are checked like at sign-in.",
+    "keys_saved": "Keys replaced",
+    "buckets": "Image buckets",
+    "buckets_note": "Each bucket keeps its own settings in .picg/settings.toml.",
+    "add_bucket": "Add bucket",
+    "add_bucket_hint": "A bucket of the same account that the token can read and write.",
+    "bucket_name": "Bucket name",
+    "bucket_invalid": "Bucket names have 3 to 63 lowercase letters, digits and hyphens.",
+    "bucket_exists": "That bucket is already in the list.",
+    "bucket_added": "{bucket} added",
+    "edit_public_url": "Change the public address",
+    "public_url_saved": "Public address saved",
+    "remove_bucket": "Remove from PiCG",
+    "remove_bucket_message": "PiCG stops using {bucket}. Nothing in the bucket is deleted."
   },
   "tools": {
     "intro": "These tools work in the browser and do not need a sign-in. Nothing is uploaded.",
@@ -359,5 +387,54 @@
     "license": "PiCG is open source under the Apache License 2.0.",
     "view_license": "License",
     "view_source": "Source code"
+  },
+  "login_r2": {
+    "step_bucket": "Create a bucket in Cloudflare R2:",
+    "step_bucket_link": "open R2",
+    "step_public": "In the bucket's Settings, connect a custom domain, or turn on its public r2.dev address.",
+    "step_public_dev": "Cloudflare limits the r2.dev address and does not recommend it for production; a custom domain is better.",
+    "step_cors": "In the bucket's Settings, add this CORS policy, so that the browser lets PiCG talk to the bucket:",
+    "copy_cors": "Copy the CORS policy",
+    "step_token": "Create an R2 API token:",
+    "step_token_link": "create token",
+    "step_token_permission": "Permissions: Object Read & Write, applied to specific buckets only; select only the image bucket.",
+    "step_token_keys": "Copy its Access Key ID and Secret Access Key; Cloudflare shows the secret only once.",
+    "s3_address": "S3 API address",
+    "s3_address_hint": "As the bucket's Settings page shows it, ending with the bucket name.",
+    "access_key_id": "Access Key ID",
+    "secret_access_key": "Secret Access Key",
+    "show_secret": "Show the Secret Access Key",
+    "hide_secret": "Hide the Secret Access Key",
+    "public_url": "Public address",
+    "public_url_hint": "The bucket's custom domain or r2.dev address. Links and thumbnails use it.",
+    "keys_required": "Enter the Access Key ID and the Secret Access Key.",
+    "checking": "Checking the keys with Cloudflare R2…",
+    "storage_note": "The keys are kept in this browser in obfuscated form, which keeps them from being readable at a glance but is not encryption. PiCG cannot see whether the token also reaches other buckets, so limit it to the image bucket.",
+    "fail": {
+      "address": "Enter the S3 API address of the bucket, such as https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>.",
+      "public_url": "Enter the public address of the bucket, starting with https://.",
+      "blocked": "The browser blocked the request to bucket {bucket}. Most likely its CORS policy is missing or does not include this site: add the policy from step 3 and try again; it can take a minute to apply.",
+      "network": "Could not reach Cloudflare R2. Check the connection and try again.",
+      "invalid": "Cloudflare R2 did not accept the keys. Check the Access Key ID and the Secret Access Key.",
+      "bucket_missing": "Bucket {bucket} does not exist in this account.",
+      "no_read": "The keys cannot read bucket {bucket}. Give the token Object Read & Write on it.",
+      "no_write": "The keys cannot write to bucket {bucket}. Give the token Object Read & Write, not Read only.",
+      "unexpected": "Cloudflare R2 answered with an unexpected error (HTTP {status})."
+    }
+  },
+  "r2_error": {
+    "network": "Could not reach Cloudflare R2. Check the connection and try again.",
+    "rate_limit": "Cloudflare R2 asked to slow down. Wait a moment and try again.",
+    "unauthorized": "Cloudflare R2 did not accept the keys. They may have been revoked; replace them in Settings.",
+    "forbidden": "The keys are not allowed to do this. Check the permissions of the token.",
+    "not_found": "Cloudflare R2 could not find it. It may have been moved or deleted.",
+    "conflict": "The file changed in the meantime, or the name is taken. Refresh and try again.",
+    "validation": "Cloudflare R2 rejected the request.",
+    "too_large": "The file is too large for Cloudflare R2.",
+    "blocked": "The browser blocked the request. The bucket's CORS policy probably does not include this site.",
+    "server": "Cloudflare R2 had a problem. Try again later.",
+    "unknown": "Something went wrong.",
+    "rename_incomplete": "The image was copied to the new name, but the old one could not be deleted, so both are in the bucket.",
+    "delete_incomplete": "Some of the images could not be deleted. Refresh to see which are left."
   }
 }

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// End-to-end tests of the built site. `e2e/app.spec.ts` runs against a fake GitHub API and needs nothing else;
+// End-to-end tests of the built site. `e2e/app.spec.ts` and `e2e/r2.spec.ts` run against a fake GitHub API and a
+// fake R2 API and need nothing else;
 // `e2e/real.spec.ts` talks to the real API and only runs when PICG_E2E_TOKEN_FILE and PICG_E2E_REPO are set.
 export default defineConfig({
   testDir: 'e2e',

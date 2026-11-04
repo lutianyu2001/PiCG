@@ -34,9 +34,9 @@
     "github_profile": "GitHub 個人頁面",
     "sign_out": "登出",
     "sign_out_title": "登出 PiCG？",
-    "keep_data": "在這台裝置上保留 Token 和設定",
-    "keep_note": "下次登入時表單已經填好。",
-    "remove_note": "從這個瀏覽器中刪除 Token、儲存庫清單和快取的設定。主題和語言保留。"
+    "keep_data": "在這台裝置上保留這個帳號",
+    "keep_note": "它會留在登入頁上，按一下就能再次登入。",
+    "remove_note": "從這個瀏覽器中刪除這個帳號的 Token 或金鑰，以及快取的設定。主題和語言保留。"
   },
   "api_error": {
     "network": "連不上 GitHub，請檢查網路後重試。",
@@ -73,7 +73,7 @@
       "friday": "週五快樂",
       "weekend": "週末愉快"
     },
-    "subtitle": "把圖片存在你自己的 GitHub 儲存庫裡，用連結分享。",
+    "subtitle": "把圖片存在你自己的 GitHub 儲存庫或 Cloudflare R2 儲存貯體裡，用連結分享。",
     "step_repo": "建立一個公開儲存庫，例如 {repo}：",
     "step_repo_link": "建立儲存庫",
     "step_repo_branch": "建議把預設分支命名為 gh-pages，這樣 PiCG 和 GitHub Pages 用的是同一個分支。已有的儲存庫可以在儲存庫的 Branches 頁面為分支改名，PiCG 會自動跟上。",
@@ -112,7 +112,15 @@
     },
     "create_branch_title": "建立 {branch} 分支？",
     "create_branch_message": "{repo} 中沒有名為 {branch} 的分支。要從預設分支建立它嗎？",
-    "create_branch": "建立分支"
+    "create_branch": "建立分支",
+    "accounts": "這台裝置上的帳號",
+    "use_account": "以 {name} 登入",
+    "forget": "從這台裝置上移除",
+    "forget_title": "移除這個帳號？",
+    "forget_message": "將從這台裝置上刪除 {name} 及其快取的設定。圖片本身不受影響。",
+    "another_account": "使用其他帳號",
+    "back_to_accounts": "返回帳號清單",
+    "provider": "圖片存放在哪裡"
   },
   "library": {
     "repository": "儲存庫",
@@ -161,7 +169,10 @@
     "next": "下一張",
     "path_edit": "資料夾路徑，可編輯",
     "path_placeholder": "根目錄",
-    "path_invalid": "這裡沒有名為 {name} 的資料夾。請選擇現有的資料夾，或用「新增資料夾」建立。"
+    "path_invalid": "這裡沒有名為 {name} 的資料夾。請選擇現有的資料夾，或用「新增資料夾」建立。",
+    "truncated_r2": "儲存貯體裡的檔案超過 100,000 個，這裡缺了一部分。",
+    "local_folder_r2": "R2 不保存空資料夾，所以在上傳圖片之前，這個資料夾只存在於 PiCG 中。",
+    "not_public": "公開位址上沒有"
   },
   "links": {
     "copy": "複製連結",
@@ -231,7 +242,7 @@
     "sync_saving": "正在儲存到 {repo}…",
     "sync_saved": "已儲存到 {repo}。",
     "sync_blocked": "這個儲存庫中有 PicX 或舊版 PiCG 儲存的設定。轉換之前，設定不會儲存到儲存庫。",
-    "sync_error": "設定沒能儲存到儲存庫，已保留在這台裝置上。",
+    "sync_error": "設定沒能儲存到 {repo}，已保留在這台裝置上。",
     "account": "帳號與儲存庫",
     "user": "GitHub 使用者",
     "token": "Token",
@@ -329,7 +340,24 @@
     "branch_note": "圖片、設定和 CNAME 都從這個分支讀取、寫入這個分支。GitHub Pages 只能發布一個分支，所以只有 Pages 發布的是這個分支時，GitHub Pages 連結才能使用。建議使用名為 gh-pages 的分支。",
     "branch_changed": "{repo} 現在使用 {branch} 分支",
     "strip_metadata": "移除照片中繼資料",
-    "strip_metadata_desc": "對不壓縮直接上傳的 JPEG、PNG 和 WebP 檔案，移除 EXIF 等資料，例如拍攝地點和相機型號。壓縮或加了浮水印的圖片本來就不會保留這些資料。圖片方向和色彩描述檔會保留。"
+    "strip_metadata_desc": "對不壓縮直接上傳的 JPEG、PNG 和 WebP 檔案，移除 EXIF 等資料，例如拍攝地點和相機型號。壓縮或加了浮水印的圖片本來就不會保留這些資料。圖片方向和色彩描述檔會保留。",
+    "r2_account": "帳戶和儲存貯體",
+    "r2_account_id": "帳戶 ID",
+    "replace_keys": "更換金鑰",
+    "replace_keys_hint": "新金鑰會像登入時一樣檢查。",
+    "keys_saved": "金鑰已更換",
+    "buckets": "圖床儲存貯體",
+    "buckets_note": "每個儲存貯體在 .picg/settings.toml 中儲存自己的設定。",
+    "add_bucket": "新增儲存貯體",
+    "add_bucket_hint": "同一帳戶下、權杖能讀寫的儲存貯體。",
+    "bucket_name": "儲存貯體名稱",
+    "bucket_invalid": "儲存貯體名稱由 3 到 63 個小寫字母、數字和連字號組成。",
+    "bucket_exists": "這個儲存貯體已經在清單中了。",
+    "bucket_added": "已新增 {bucket}",
+    "edit_public_url": "修改公開位址",
+    "public_url_saved": "公開位址已儲存",
+    "remove_bucket": "從 PiCG 中移除",
+    "remove_bucket_message": "PiCG 將不再使用 {bucket}。儲存貯體裡的內容不會被刪除。"
   },
   "tools": {
     "intro": "這些工具在瀏覽器中執行，不需要登入，也不會上傳任何東西。",
@@ -359,5 +387,54 @@
     "license": "PiCG 以 Apache License 2.0 開源。",
     "view_license": "授權條款",
     "view_source": "原始碼"
+  },
+  "login_r2": {
+    "step_bucket": "在 Cloudflare R2 中建立一個儲存貯體：",
+    "step_bucket_link": "開啟 R2",
+    "step_public": "在儲存貯體的「設定」中連接自訂網域，或開啟它的公開 r2.dev 位址。",
+    "step_public_dev": "Cloudflare 對 r2.dev 位址有流量限制，不建議用於正式環境，最好使用自訂網域。",
+    "step_cors": "在儲存貯體的「設定」中加入下面的 CORS 原則，瀏覽器才允許 PiCG 存取這個儲存貯體：",
+    "copy_cors": "複製 CORS 原則",
+    "step_token": "建立一個 R2 API 權杖：",
+    "step_token_link": "建立權杖",
+    "step_token_permission": "權限選 Object Read & Write，僅套用至指定的儲存貯體，並且只選圖床儲存貯體。",
+    "step_token_keys": "複製它的 Access Key ID 和 Secret Access Key。Secret 只會顯示一次。",
+    "s3_address": "S3 API 位址",
+    "s3_address_hint": "照儲存貯體「設定」頁上顯示的填寫，以儲存貯體名稱結尾。",
+    "access_key_id": "Access Key ID",
+    "secret_access_key": "Secret Access Key",
+    "show_secret": "顯示 Secret Access Key",
+    "hide_secret": "隱藏 Secret Access Key",
+    "public_url": "公開位址",
+    "public_url_hint": "儲存貯體的自訂網域或 r2.dev 位址。連結和縮圖都用它。",
+    "keys_required": "請填寫 Access Key ID 和 Secret Access Key。",
+    "checking": "正在透過 Cloudflare R2 檢查金鑰…",
+    "storage_note": "金鑰以混淆後的形式儲存在這個瀏覽器中，只能防止被一眼看到，並不是加密。PiCG 無法檢查權杖是否還能存取其他儲存貯體，所以請把它限定在圖床儲存貯體上。",
+    "fail": {
+      "address": "請填寫儲存貯體的 S3 API 位址，例如 https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>。",
+      "public_url": "請填寫儲存貯體的公開位址，以 https:// 開頭。",
+      "blocked": "瀏覽器攔截了對儲存貯體 {bucket} 的請求。多半是沒有設定 CORS 原則，或者原則裡沒有這個網站：請加入第 3 步中的原則後重試，生效可能需要一分鐘左右。",
+      "network": "無法連線至 Cloudflare R2。請檢查網路後重試。",
+      "invalid": "Cloudflare R2 不接受這組金鑰。請檢查 Access Key ID 和 Secret Access Key。",
+      "bucket_missing": "這個帳戶下沒有儲存貯體 {bucket}。",
+      "no_read": "這組金鑰無法讀取儲存貯體 {bucket}。請給權杖這個儲存貯體的 Object Read & Write 權限。",
+      "no_write": "這組金鑰無法寫入儲存貯體 {bucket}。請給權杖 Object Read & Write 權限，而不是唯讀。",
+      "unexpected": "Cloudflare R2 傳回了非預期的錯誤（HTTP {status}）。"
+    }
+  },
+  "r2_error": {
+    "network": "無法連線至 Cloudflare R2。請檢查網路後重試。",
+    "rate_limit": "Cloudflare R2 要求降低請求頻率。請稍等片刻後重試。",
+    "unauthorized": "Cloudflare R2 不接受這組金鑰，可能已被撤銷。請在設定中更換。",
+    "forbidden": "這組金鑰沒有執行此操作的權限。請檢查權杖的權限。",
+    "not_found": "Cloudflare R2 找不到它，可能已被移動或刪除。",
+    "conflict": "檔案在此期間被改動了，或者名稱已被使用。請重新整理後重試。",
+    "validation": "Cloudflare R2 拒絕了這個請求。",
+    "too_large": "檔案太大，Cloudflare R2 無法接收。",
+    "blocked": "瀏覽器攔截了這個請求。儲存貯體的 CORS 原則裡可能沒有這個網站。",
+    "server": "Cloudflare R2 出了問題。請稍後再試。",
+    "unknown": "發生了問題。",
+    "rename_incomplete": "圖片已複製為新名稱，但舊檔案沒能刪除，所以儲存貯體裡兩個都在。",
+    "delete_incomplete": "有些圖片沒能刪除。請重新整理查看剩下哪些。"
   }
 }

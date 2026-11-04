@@ -5,98 +5,301 @@
       <p class="muted">{{ 'login.subtitle' | t }}</p>
     </div>
 
-    <ol class="steps">
-      <li>
-        {{ 'login.step_repo' | t: { repo: defaultRepo } }}
-        <a target="_blank" rel="noopener" [href]="createRepoUrl">{{
-          'login.step_repo_link' | t
-        }}</a>
+    @if (picking()) {
+      <div class="accounts" animate.enter="pg-enter">
+        <h2>{{ 'login.accounts' | t }}</h2>
         <ul>
-          <li>{{ 'login.step_repo_branch' | t }}</li>
+          @for (account of accounts(); track accountId(account)) {
+            <li>
+              <button
+                class="account"
+                type="button"
+                [disabled]="busy()"
+                [attr.aria-label]="'login.use_account' | t: { name: label(account) }"
+                (click)="use(account)"
+              >
+                @if (account.kind === 'github' && account.user?.avatarUrl) {
+                  <img class="avatar" alt="" [src]="account.user!.avatarUrl" />
+                } @else {
+                  <span class="avatar icon">
+                    <mat-icon [svgIcon]="account.kind === 'r2' ? 'cloud' : 'person'" />
+                  </span>
+                }
+                <span class="text">
+                  <strong>{{ label(account) }}</strong>
+                  <span class="muted">{{ targets(account) }}</span>
+                </span>
+              </button>
+              <button
+                matIconButton
+                type="button"
+                [disabled]="busy()"
+                [matTooltip]="'login.forget' | t"
+                [attr.aria-label]="'login.forget' | t"
+                (click)="forget(account)"
+              >
+                <mat-icon svgIcon="close" />
+              </button>
+              @if (using() === accountId(account)) {
+                <mat-progress-bar mode="indeterminate" animate.enter="pg-enter-fade" />
+              }
+            </li>
+          }
         </ul>
-      </li>
-      <li>
-        {{ 'login.step_token' | t }}
-        <a target="_blank" rel="noopener" [href]="createTokenUrl">{{
-          'login.step_token_link' | t
-        }}</a>
-        <ul>
-          <li>{{ 'login.step_token_access' | t }}</li>
-          <li>{{ 'login.step_token_permission' | t }}</li>
-        </ul>
-      </li>
-      <li>{{ 'login.step_sign_in' | t }}</li>
-    </ol>
-
-    <div class="side">
-      <form (ngSubmit)="signIn()">
-        @if (fromLegacy) {
-          <p class="notice">
-            <mat-icon svgIcon="info" />
-            <span>{{ 'login.from_legacy' | t }}</span>
-          </p>
-        }
-        <mat-form-field>
-          <mat-label>{{ 'login.token' | t }}</mat-label>
-          <input
-            matInput
-            name="token"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="github_pat_…"
-            [disabled]="busy()"
-            [type]="showToken() ? 'text' : 'password'"
-            [ngModel]="token()"
-            (ngModelChange)="token.set($event)"
-          />
-          <button
-            matIconButton
-            matSuffix
-            type="button"
-            [attr.aria-label]="(showToken() ? 'login.hide_token' : 'login.show_token') | t"
-            (click)="showToken.set(!showToken())"
-          >
-            <mat-icon [svgIcon]="showToken() ? 'visibility-off' : 'visibility'" />
-          </button>
-        </mat-form-field>
-
-        <mat-form-field floatLabel="always">
-          <mat-label>{{ 'login.repos' | t }}</mat-label>
-          <input
-            matInput
-            name="repos"
-            autocomplete="off"
-            spellcheck="false"
-            [disabled]="busy()"
-            [placeholder]="defaultRepo"
-            [ngModel]="repoNames()"
-            (ngModelChange)="repoNames.set($event)"
-          />
-          <mat-hint>{{ 'login.repos_hint' | t: { repo: defaultRepo } }}</mat-hint>
-        </mat-form-field>
-
-        <mat-checkbox [disabled]="busy()" [checked]="skipCheck()" (change)="toggleSkip($event)">
-          {{ 'login.skip' | t }}
-        </mat-checkbox>
-
         @if (error()) {
           <p class="notice warn" role="alert" animate.enter="pg-enter">
             <mat-icon svgIcon="error" />
             <span>{{ error() }}</span>
           </p>
         }
-
-        @if (busy()) {
-          <mat-progress-bar mode="indeterminate" animate.enter="pg-enter-fade" />
-          <p class="muted" animate.enter="pg-enter-fade">{{ 'login.checking' | t }}</p>
-        }
-
-        <button matButton="filled" type="submit" [disabled]="busy()">
-          {{ 'login.sign_in' | t }}
+        <button matButton type="button" [disabled]="busy()" (click)="anotherAccount()">
+          <mat-icon svgIcon="person-add" />{{ 'login.another_account' | t }}
         </button>
-      </form>
+      </div>
+    } @else {
+      <div class="switch">
+        @if (accounts().length) {
+          <button matButton type="button" [disabled]="busy()" (click)="backToAccounts()">
+            <mat-icon svgIcon="arrow-back" />{{ 'login.back_to_accounts' | t }}
+          </button>
+        }
+        <mat-button-toggle-group
+          hideSingleSelectionIndicator
+          [attr.aria-label]="'login.provider' | t"
+          [disabled]="busy()"
+          [value]="provider()"
+          (change)="chooseProvider($event.value)"
+        >
+          <mat-button-toggle value="github">GitHub</mat-button-toggle>
+          <mat-button-toggle value="r2">Cloudflare R2</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
 
-      <p class="muted small">{{ 'login.storage_note' | t }}</p>
-    </div>
+      @if (provider() === 'github') {
+        <ol class="steps">
+          <li>
+            {{ 'login.step_repo' | t: { repo: defaultRepo } }}
+            <a target="_blank" rel="noopener" [href]="createRepoUrl">{{
+              'login.step_repo_link' | t
+            }}</a>
+            <ul>
+              <li>{{ 'login.step_repo_branch' | t }}</li>
+            </ul>
+          </li>
+          <li>
+            {{ 'login.step_token' | t }}
+            <a target="_blank" rel="noopener" [href]="createTokenUrl">{{
+              'login.step_token_link' | t
+            }}</a>
+            <ul>
+              <li>{{ 'login.step_token_access' | t }}</li>
+              <li>{{ 'login.step_token_permission' | t }}</li>
+            </ul>
+          </li>
+          <li>{{ 'login.step_sign_in' | t }}</li>
+        </ol>
+
+        <div class="side">
+          <form (ngSubmit)="signIn()">
+            @if (fromLegacy && token()) {
+              <p class="notice">
+                <mat-icon svgIcon="info" />
+                <span>{{ 'login.from_legacy' | t }}</span>
+              </p>
+            }
+            <mat-form-field>
+              <mat-label>{{ 'login.token' | t }}</mat-label>
+              <input
+                matInput
+                name="token"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="github_pat_…"
+                [disabled]="busy()"
+                [type]="showToken() ? 'text' : 'password'"
+                [ngModel]="token()"
+                (ngModelChange)="token.set($event)"
+              />
+              <button
+                matIconButton
+                matSuffix
+                type="button"
+                [attr.aria-label]="(showToken() ? 'login.hide_token' : 'login.show_token') | t"
+                (click)="showToken.set(!showToken())"
+              >
+                <mat-icon [svgIcon]="showToken() ? 'visibility-off' : 'visibility'" />
+              </button>
+            </mat-form-field>
+
+            <mat-form-field floatLabel="always">
+              <mat-label>{{ 'login.repos' | t }}</mat-label>
+              <input
+                matInput
+                name="repos"
+                autocomplete="off"
+                spellcheck="false"
+                [disabled]="busy()"
+                [placeholder]="defaultRepo"
+                [ngModel]="repoNames()"
+                (ngModelChange)="repoNames.set($event)"
+              />
+              <mat-hint>{{ 'login.repos_hint' | t: { repo: defaultRepo } }}</mat-hint>
+            </mat-form-field>
+
+            <mat-checkbox [disabled]="busy()" [checked]="skipCheck()" (change)="toggleSkip($event)">
+              {{ 'login.skip' | t }}
+            </mat-checkbox>
+
+            @if (error()) {
+              <p class="notice warn" role="alert" animate.enter="pg-enter">
+                <mat-icon svgIcon="error" />
+                <span>{{ error() }}</span>
+              </p>
+            }
+
+            @if (busy()) {
+              <mat-progress-bar mode="indeterminate" animate.enter="pg-enter-fade" />
+              <p class="muted" animate.enter="pg-enter-fade">{{ 'login.checking' | t }}</p>
+            }
+
+            <button matButton="filled" type="submit" [disabled]="busy()">
+              {{ 'login.sign_in' | t }}
+            </button>
+          </form>
+
+          <p class="muted small">{{ 'login.storage_note' | t }}</p>
+        </div>
+      } @else {
+        <ol class="steps">
+          <li>
+            {{ 'login_r2.step_bucket' | t }}
+            <a target="_blank" rel="noopener" [href]="r2DashboardUrl">{{
+              'login_r2.step_bucket_link' | t
+            }}</a>
+          </li>
+          <li>
+            {{ 'login_r2.step_public' | t }}
+            <ul>
+              <li>{{ 'login_r2.step_public_dev' | t }}</li>
+            </ul>
+          </li>
+          <li>
+            {{ 'login_r2.step_cors' | t }}
+            <div class="cors">
+              <pre><code>{{ cors }}</code></pre>
+              <button
+                matIconButton
+                type="button"
+                [matTooltip]="'common.copy' | t"
+                [attr.aria-label]="'login_r2.copy_cors' | t"
+                (click)="copyCors()"
+              >
+                <mat-icon svgIcon="content-copy" />
+              </button>
+            </div>
+          </li>
+          <li>
+            {{ 'login_r2.step_token' | t }}
+            <a target="_blank" rel="noopener" [href]="r2TokensUrl">{{
+              'login_r2.step_token_link' | t
+            }}</a>
+            <ul>
+              <li>{{ 'login_r2.step_token_permission' | t }}</li>
+              <li>{{ 'login_r2.step_token_keys' | t }}</li>
+            </ul>
+          </li>
+        </ol>
+
+        <div class="side">
+          <form (ngSubmit)="signInR2()">
+            <mat-form-field floatLabel="always">
+              <mat-label>{{ 'login_r2.s3_address' | t }}</mat-label>
+              <input
+                matInput
+                name="s3"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>"
+                [disabled]="busy()"
+                [ngModel]="s3Address()"
+                (ngModelChange)="s3Address.set($event)"
+              />
+              <mat-hint>{{ 'login_r2.s3_address_hint' | t }}</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>{{ 'login_r2.access_key_id' | t }}</mat-label>
+              <input
+                matInput
+                name="access-key-id"
+                autocomplete="off"
+                spellcheck="false"
+                [disabled]="busy()"
+                [ngModel]="accessKeyId()"
+                (ngModelChange)="accessKeyId.set($event)"
+              />
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>{{ 'login_r2.secret_access_key' | t }}</mat-label>
+              <input
+                matInput
+                name="secret-access-key"
+                autocomplete="off"
+                spellcheck="false"
+                [disabled]="busy()"
+                [type]="showSecret() ? 'text' : 'password'"
+                [ngModel]="secretAccessKey()"
+                (ngModelChange)="secretAccessKey.set($event)"
+              />
+              <button
+                matIconButton
+                matSuffix
+                type="button"
+                [attr.aria-label]="
+                  (showSecret() ? 'login_r2.hide_secret' : 'login_r2.show_secret') | t
+                "
+                (click)="showSecret.set(!showSecret())"
+              >
+                <mat-icon [svgIcon]="showSecret() ? 'visibility-off' : 'visibility'" />
+              </button>
+            </mat-form-field>
+
+            <mat-form-field floatLabel="always">
+              <mat-label>{{ 'login_r2.public_url' | t }}</mat-label>
+              <input
+                matInput
+                name="public-url"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="https://img.example.com"
+                [disabled]="busy()"
+                [ngModel]="publicUrl()"
+                (ngModelChange)="publicUrl.set($event)"
+              />
+              <mat-hint>{{ 'login_r2.public_url_hint' | t }}</mat-hint>
+            </mat-form-field>
+
+            @if (error()) {
+              <p class="notice warn" role="alert" animate.enter="pg-enter">
+                <mat-icon svgIcon="error" />
+                <span>{{ error() }}</span>
+              </p>
+            }
+
+            @if (busy()) {
+              <mat-progress-bar mode="indeterminate" animate.enter="pg-enter-fade" />
+              <p class="muted" animate.enter="pg-enter-fade">{{ 'login_r2.checking' | t }}</p>
+            }
+
+            <button matButton="filled" type="submit" [disabled]="busy()">
+              {{ 'login.sign_in' | t }}
+            </button>
+          </form>
+
+          <p class="muted small">{{ 'login_r2.storage_note' | t }}</p>
+        </div>
+      }
+    }
   </section>
 </div>

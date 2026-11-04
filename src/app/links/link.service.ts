@@ -3,9 +3,9 @@ import { Clipboard } from '../core/clipboard'
 import { PagesService } from '../pages/pages.service'
 import { SessionStore } from '../session/session.store'
 import { SettingsStore } from '../settings/settings.store'
-import { BUILT_IN_RULES, LinkContext, allFormats, allRules, buildUrl, formatLink } from './links'
+import { LinkContext, allFormats, allRules, buildUrl, builtInRules, formatLink } from './links'
 
-/** Links of images in the repository in use, following the selected rule and format. */
+/** Links of images in the repository or bucket in use, following the selected rule and format. */
 @Injectable({ providedIn: 'root' })
 export class LinkService {
   private readonly session = inject(SessionStore)
@@ -15,20 +15,40 @@ export class LinkService {
 
   private readonly context = computed<LinkContext | null>(() => {
     const repo = this.session.repo()
-    if (!repo) {
-      return null
+    if (repo) {
+      return {
+        kind: 'github',
+        owner: repo.owner,
+        repo: repo.name,
+        branch: repo.branch,
+        pages: this.pages.status().base,
+        bucket: '',
+        public: ''
+      }
     }
-    return {
-      owner: repo.owner,
-      repo: repo.name,
-      branch: repo.branch,
-      pages: this.pages.status().base
+    const bucket = this.session.bucket()
+    if (bucket) {
+      return {
+        kind: 'r2',
+        owner: '',
+        repo: '',
+        branch: '',
+        pages: '',
+        bucket: bucket.bucket,
+        public: bucket.publicUrl
+      }
     }
+    return null
   })
+
+  readonly kind = computed(() => this.context()?.kind ?? 'github')
+
+  /** The rules that apply to the storage in use. */
+  readonly rules = computed(() => allRules(this.settings.settings().link, this.kind()))
 
   readonly rule = computed(() => {
     const link = this.settings.settings().link
-    return allRules(link).find((r) => r.id === link.rule) ?? BUILT_IN_RULES[0]
+    return this.rules().find((r) => r.id === link.rule) ?? builtInRules(this.kind())[0]
   })
 
   readonly format = computed(() => {
@@ -41,10 +61,13 @@ export class LinkService {
     return ctx ? buildUrl(this.rule().template, ctx, path) : ''
   }
 
-  /** URL with the GitHub rule, which works as soon as the commit exists; used for thumbnails as a fallback. */
+  /**
+   * URL with the first built-in rule (GitHub's, which works as soon as the commit exists, or the bucket's public
+   * address); used for thumbnails as a fallback.
+   */
   rawUrl(path: string): string {
     const ctx = this.context()
-    return ctx ? buildUrl(BUILT_IN_RULES[0].template, ctx, path) : ''
+    return ctx ? buildUrl(builtInRules(ctx.kind)[0].template, ctx, path) : ''
   }
 
   formatted(path: string): string {

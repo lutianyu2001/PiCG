@@ -49,15 +49,17 @@ function buildIndex(listing: Listing): Index {
   const images = new Map<string, ImageFile[]>()
   const paths = new Set<string>()
   const files = new Map<string, number>()
+  /** Adds a folder and every folder above it, each linked to its parent (R2 lists no folders of its own). */
   const addFolder = (path: string) => {
-    while (!folders.has(path)) {
-      folders.set(path, new Set())
-      const parent = parentOf(path)
+    for (let p = path; p; p = parentOf(p)) {
+      const parent = parentOf(p)
+      if (!folders.has(p)) {
+        folders.set(p, new Set())
+      }
       if (!folders.has(parent)) {
         folders.set(parent, new Set())
       }
-      folders.get(parent)!.add(path)
-      path = parent
+      folders.get(parent)!.add(p)
     }
   }
   for (const folder of listing.folders) {

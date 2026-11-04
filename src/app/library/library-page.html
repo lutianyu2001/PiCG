@@ -1,20 +1,20 @@
 <div class="library" [class.with-queue]="queue.items().length">
   <div class="main" pgFileDrop (pgFileDrop)="add($event)">
     <div class="toolbar">
-      @if (session.repos().length > 1) {
+      @if (session.targets().length > 1) {
         <mat-select
           class="repo"
           panelWidth=""
           [attr.aria-label]="'library.repository' | t"
-          [value]="session.repo()?.name"
+          [value]="session.target()"
           (selectionChange)="switchRepo($event.value)"
         >
-          @for (repo of session.repos(); track repo.name) {
-            <mat-option [value]="repo.name">{{ repo.name }}</mat-option>
+          @for (name of session.targets(); track name) {
+            <mat-option [value]="name">{{ name }}</mat-option>
           }
         </mat-select>
       } @else {
-        <span class="repo single">{{ session.repo()?.name }}</span>
+        <span class="repo single">{{ session.target() }}</span>
       }
 
       <pg-path-field (navigate)="open($event)" />
@@ -38,14 +38,16 @@
       >
         <mat-icon svgIcon="refresh" />
       </button>
-      <button matIconButton [matMenuTriggerFor]="more" [attr.aria-label]="'common.more' | t">
-        <mat-icon svgIcon="more-vert" />
-      </button>
-      <mat-menu #more="matMenu" xPosition="before">
-        <button mat-menu-item (click)="actions.importFromRepo()">
-          <mat-icon svgIcon="download" />{{ 'import.title' | t }}
+      @if (session.kind() === 'github') {
+        <button matIconButton [matMenuTriggerFor]="more" [attr.aria-label]="'common.more' | t">
+          <mat-icon svgIcon="more-vert" />
         </button>
-      </mat-menu>
+        <mat-menu #more="matMenu" xPosition="before">
+          <button mat-menu-item (click)="actions.importFromRepo()">
+            <mat-icon svgIcon="download" />{{ 'import.title' | t }}
+          </button>
+        </mat-menu>
+      }
       <input
         #picker
         class="visually-hidden"
@@ -104,13 +106,19 @@
         @if (library.truncated()) {
           <div class="notice warn" animate.enter="pg-enter">
             <mat-icon svgIcon="warning" />
-            <p>{{ 'library.truncated' | t }}</p>
+            <p>
+              {{ (session.kind() === 'r2' ? 'library.truncated_r2' : 'library.truncated') | t }}
+            </p>
           </div>
         }
         @if (library.isLocalFolder()) {
           <div class="notice" animate.enter="pg-enter">
             <mat-icon svgIcon="info" />
-            <p>{{ 'library.local_folder' | t }}</p>
+            <p>
+              {{
+                (session.kind() === 'r2' ? 'library.local_folder_r2' : 'library.local_folder') | t
+              }}
+            </p>
           </div>
         }
       </div>

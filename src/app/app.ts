@@ -13,6 +13,7 @@ import { Notify } from './core/notify.service'
 import { SessionStore } from './session/session.store'
 import { SignOutDialog } from './session/sign-out-dialog'
 import { Logo } from './shared/logo'
+import { accountOf } from './r2/r2.client'
 
 interface NavItem {
   path: string
@@ -122,6 +123,11 @@ export class App {
 
   protected toggleNav() {
     this.appearance.patch({ navCollapsed: !this.collapsed() })
+  }
+
+  /** The start of the account ID, enough to tell accounts apart. */
+  protected accountLabel(endpoint: string) {
+    return `${accountOf(endpoint).slice(0, 8)}…`
   }
 
   protected signOut() {

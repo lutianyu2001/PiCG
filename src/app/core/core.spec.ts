@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { finalName, cleanFolderPath, splitName, timeFolder } from '../library/naming'
-import { buildUrl, formatLink, newTemplateId, ruleProblem } from '../links/links'
+import {
+  LinkContext,
+  R2_RULES,
+  allRules,
+  buildUrl,
+  formatLink,
+  newTemplateId,
+  ruleProblem
+} from '../links/links'
 import { normalizeDomain } from '../pages/pages.service'
 import { formatRepoSpecs, isBranchName, parseRepoSpecs } from '../session/token-check'
 import { browserLanguage } from './appearance.store'
@@ -40,13 +48,40 @@ describe('naming', () => {
 })
 
 describe('links', () => {
-  const ctx = { owner: 'me', repo: 'pics', branch: 'main', pages: 'https://img.example.com/' }
+  const ctx: LinkContext = {
+    kind: 'github',
+    owner: 'me',
+    repo: 'pics',
+    branch: 'main',
+    pages: 'https://img.example.com/',
+    bucket: '',
+    public: ''
+  }
 
   it('fills rule templates and encodes paths', () => {
     expect(
       buildUrl('https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{path}', ctx, 'a b/c#.png')
     ).toBe('https://cdn.jsdelivr.net/gh/me/pics@main/a%20b/c%23.png')
     expect(buildUrl('{pages}/{path}', ctx, 'x.png')).toBe('https://img.example.com/x.png')
+  })
+
+  it('links bucket images at the public address', () => {
+    const bucket: LinkContext = {
+      ...ctx,
+      kind: 'r2',
+      owner: '',
+      repo: '',
+      branch: '',
+      pages: '',
+      bucket: 'pics',
+      public: 'https://img.example.com/'
+    }
+    expect(buildUrl(R2_RULES[0].template, bucket, '2026/a b.png')).toBe(
+      'https://img.example.com/2026/a%20b.png'
+    )
+    expect(
+      allRules({ rule: 'r2', format: 'url', rules: [], formats: [] }, 'r2').map((r) => r.id)
+    ).toEqual(['r2'])
   })
 
   it('formats links', () => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'
 import { MatButton } from '@angular/material/button'
 import { MatFormFieldModule } from '@angular/material/form-field'
 import { MatIcon } from '@angular/material/icon'
@@ -17,6 +17,7 @@ import { Workspace } from '../session/workspace.service'
 import { AccountSection } from './account-section'
 import { ImageSection } from './image-section'
 import { LinksSection } from './links-section'
+import { R2AccountSection } from './r2-account-section'
 import { SettingsStore } from './settings.store'
 import { UploadSection } from './upload-section'
 
@@ -30,6 +31,7 @@ import { UploadSection } from './upload-section'
     MatFormFieldModule,
     MatIcon,
     MatSelectModule,
+    R2AccountSection,
     RouterLink,
     TranslatePipe,
     UploadSection
@@ -61,7 +63,7 @@ import { UploadSection } from './upload-section'
             <div class="notice warn banner" animate.enter="pg-enter">
               <mat-icon svgIcon="sync-problem" />
               <div>
-                <p>{{ 'settings.sync_error' | t }}</p>
+                <p>{{ 'settings.sync_error' | t: { repo: repoName() } }}</p>
                 <button matButton (click)="store.schedule()">{{ 'common.retry' | t }}</button>
               </div>
             </div>
@@ -78,7 +80,11 @@ import { UploadSection } from './upload-section'
           }
         }
 
-        <pg-account-section />
+        @if (session.kind() === 'r2') {
+          <pg-r2-account-section />
+        } @else {
+          <pg-account-section />
+        }
         <pg-upload-section />
         <pg-image-section />
         <pg-links-section />
@@ -168,10 +174,10 @@ export class SettingsPage {
   protected readonly legacy = inject(LegacyService)
   protected readonly workspace = inject(Workspace)
 
-  protected readonly repoName = computed(() => this.session.repo()?.name ?? '')
+  protected readonly repoName = this.session.target
 
   constructor() {
-    if (this.session.loggedIn()) {
+    if (this.session.loggedIn() && this.session.kind() === 'github') {
       void this.workspace.refreshPages()
     }
   }

@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core'
 import { readJson, writeJson } from '../core/storage'
+import { allRules } from '../links/links'
 import { ImageStorage, StorageError } from '../storage/storage'
 import {
   ParsedSettings,
@@ -93,6 +94,11 @@ export class SettingsStore {
       return 'none'
     }
     if (!file) {
+      // A new storage starts with the current settings, but with a link rule that applies to it.
+      const rules = allRules(this.state().link, storage.kind)
+      if (!rules.some((r) => r.id === this.state().link.rule)) {
+        this.state.update((s) => ({ ...s, link: { ...s.link, rule: rules[0].id } }))
+      }
       this.remote = { version: undefined, raw: {}, base: this.state() }
       return 'none'
     }

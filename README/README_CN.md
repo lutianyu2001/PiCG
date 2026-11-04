@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)<br>
 [![CI](https://github.com/lutianyu2001/PiCG/actions/workflows/ci.yml/badge.svg)](https://github.com/lutianyu2001/PiCG/actions/workflows/ci.yml)
 
-一个轻量的图床：在浏览器里把图片上传到你自己的 GitHub 仓库，并生成图片链接。
+一个轻量的图床：在浏览器里把图片上传到你自己的 GitHub 仓库或 Cloudflare R2 存储桶，并生成图片链接。
 
 ## 目录
 
@@ -20,6 +20,7 @@
 - [前置要求](#前置要求)
 - [安装](#安装)
 - [用法](#用法)
+- [Cloudflare R2](#cloudflare-r2)
 - [GitHub Pages](#github-pages)
 - [设置文件](#设置文件)
 - [部署](#部署)
@@ -31,25 +32,27 @@
 
 ## 概述
 
-PiCG 是一个没有服务器的静态网站。它在浏览器中用 Fine-grained personal access token 直接调用 GitHub REST API，把图片作为文件存进公开仓库，并生成指向 GitHub、GitHub Pages 或 CDN 的链接。图片在上传前可以在浏览器中压缩、加水印。
+PiCG 是一个没有服务器的静态网站。它在浏览器中直接调用 GitHub REST API（用 Fine-grained personal access token），或 Cloudflare R2 的 S3 兼容 API（用 R2 API 令牌），把图片作为文件存进公开仓库或存储桶，并生成指向 GitHub、GitHub Pages、CDN 或存储桶公开地址的链接。图片在上传前可以在浏览器中压缩、加水印。
 
 PiCG 最初打算分叉 [PicX v3.0.2 版本](https://github.com/XPoet/picx/releases/tag/v3.0.2)（commit [d2c5db7](https://github.com/XPoet/picx/commit/d2c5db77901856656a545905208647c95dfff910)，2024-04-30）改一改来用，这是 PicX 在 v3.1.0 改版前的最后一个版本。但改动越来越多，最后发现还不如从头重写。现在的 PiCG 与 PicX 没有任何代码关联。唯一的非代码关联是 PiCG 与 PicX 的设置文件保持兼容：它能读取 PicX 以及早期基于 PicX 的 PiCG 版本保存的设置，并转换成自己的格式。
 
 ## 功能特性
 
-- 每个仓库一个图库页面：用可编辑的路径浏览文件夹（点某一级即可返回，也可以直接输入路径，有候选提示），拖入、粘贴或选择图片，上传到你所在的文件夹；拖到某个文件夹上就上传到那里，拖入文件夹则保留其目录结构
-- 上传队列：显示图片会传到哪里，可以重命名，整批作为一个 commit 上传；也可以设为添加后立即上传
+- 图片可以存在 GitHub 仓库或 Cloudflare R2 存储桶里，每次登录使用其中一种
+- 记住在这台设备上登录过的账号，列在登录页上，点一下即可再次登录
+- 每个仓库或存储桶一个图库页面：用可编辑的路径浏览文件夹（点某一级即可返回，也可以直接输入路径，有候选提示），拖入、粘贴或选择图片，上传到你所在的文件夹；拖到某个文件夹上就上传到那里，拖入文件夹则保留其目录结构
+- 上传队列：显示图片会传到哪里，可以重命名，整批上传（在 GitHub 上是一个 commit）；也可以设为添加后立即上传
 - 上传的子文件夹：不加、按时间命名（date-fns 格式可调，如 `yyyy/MM`）或自定义名称
 - 文件名可加内容哈希和前缀
-- 每个文件夹最多 1000 个文件，超过上限的上传会失败，上传失败时会说明原因
+- GitHub 仓库的每个文件夹最多 1000 个文件，超过上限的上传会失败，上传失败时会说明原因
 - 压缩为 WebP、AVIF 或 JPEG（MozJPEG）并加文字水印，用 jSquash 在 Web Worker 中完成
 - 上传时转换 HEIC 和 HEIF 照片；浏览器无法解码时加载 libheif（LGPL-3.0），它作为单独的文件放在 `heif/` 中（见 [NOTICE](../NOTICE)）
 - 上传前去除拍摄地点等照片元数据，保留图片方向和色彩配置文件
 - 不重新编码的重命名、删除、属性查看、多选（复选框、Shift 点击、长按）、批量复制和删除
 - 链接规则：GitHub、GitHub Pages、jsDelivr、Statically 和 jsDelivr 镜像，也可以自定义；可复制为纯链接、Markdown、HTML、BBCode 或自定义格式
 - GitHub Pages 直接发布图床分支，无需部署；PiCG 会显示 Pages 是否开启，并能设置自定义域名
-- 支持多个仓库，每个仓库的设置分别存放在 `.picg/settings.toml` 中，每次修改后几秒自动写回
-- 从其他仓库导入：复制这里还没有的图片，保留原路径
+- 支持多个仓库或存储桶，各自的设置分别存放在 `.picg/settings.toml` 中，每次修改后几秒自动写回
+- 从其他 GitHub 仓库导入：复制这里还没有的图片，保留原路径
 - 工具箱：压缩、转 Base64、加水印，无需登录
 - 简体中文、繁体中文、英文和日文界面，顶栏有语言按钮
 - 浅色和深色主题，点顶栏的太阳或月亮按钮切换；也可以在**设置**里选择跟随系统
@@ -59,7 +62,7 @@ PiCG 最初打算分叉 [PicX v3.0.2 版本](https://github.com/XPoet/picx/relea
 
 ## 前置要求
 
-- 一个 GitHub 账号
+- 一个 GitHub 账号，或开通了 R2 的 Cloudflare 账号
 - 从源码构建时：
   - pnpm 12.16.1，由 `package.json` 的 `packageManager` 固定
   - Node.js 24.22.2，由 `package.json` 的 `devEngines.runtime` 固定；pnpm 会为项目下载它，所以 `pnpm` 脚本不使用你全局安装的 Node.js
@@ -94,7 +97,7 @@ PiCG 最初打算分叉 [PicX v3.0.2 版本](https://github.com/XPoet/picx/relea
 | `pnpm serve` | 在 4173 端口预览生产构建 |
 | `pnpm wasm` | 把 jSquash 编码器二进制文件及其许可证从 `node_modules/@jsquash` 复制到 `public/wasm/`；`dev` 和 `build` 会先运行它 |
 | `pnpm test` | 运行单元测试 |
-| `pnpm e2e` | 在无头 Chromium 中对着模拟的 GitHub API 运行端到端测试（需先构建） |
+| `pnpm e2e` | 在无头 Chromium 中对着模拟的 GitHub API 和 R2 API 运行端到端测试（需先构建） |
 | `pnpm e2e:real` | 对着真实的 GitHub API 运行冒烟测试（见[测试](#测试)） |
 | `pnpm typecheck` | 检查代码和模板的类型 |
 | `pnpm lint` | 用 ESLint 检查代码 |
@@ -102,6 +105,10 @@ PiCG 最初打算分叉 [PicX v3.0.2 版本](https://github.com/XPoet/picx/relea
 应用的行为见 [`docs/spec.md`](../docs/spec.md)。
 
 ## 用法
+
+登录页有 **GitHub** 和 **Cloudflare R2** 两个标签页。登录过的账号排在最前面，点一下即可再次登录，也可以选 **使用其他账号**。退出登录时会询问是否在这台设备上保留这个账号；不保留的话，会删除它的 Token 或密钥以及缓存的设置。
+
+### GitHub
 
 1. [创建一个公开仓库](https://github.com/new?name=picg-images-hosting&visibility=public)，例如 `picg-images-hosting`。
 2. [创建一个 Fine-grained personal access token](https://github.com/settings/personal-access-tokens/new?name=PiCG&expires_in=90&contents=write)：
@@ -111,9 +118,34 @@ PiCG 最初打算分叉 [PicX v3.0.2 版本](https://github.com/XPoet/picx/relea
 
 登录时会检查 Token。PiCG 会拒绝 Classic token、不能写入所列全部仓库的 Token，以及还能写入你其他仓库的 Token。仓库多时检查其他仓库会很慢，**跳过 Token 安全检查** 只跳过这一部分。空仓库会先建一个 `README.md`，每个仓库都会加一个 `.nojekyll`，让 GitHub Pages 不经 Jekyll 直接提供文件。
 
-Token 以混淆后的形式保存在浏览器的 `localStorage` 中。这只能防止它被一眼看到，并不是加密，因为密钥就在应用里。退出登录时会询问是否在这台设备上保留 Token 和设置。
+Token 以混淆后的形式保存在浏览器的 `localStorage` 中。这只能防止它被一眼看到，并不是加密，因为密钥就在应用里。
 
 Note：GitHub 不公开 Fine-grained token 的完整权限列表，所以检查看不到它在图床仓库本身上多给的权限。请保持 **No access**。
+
+## Cloudflare R2
+
+1. 在 Cloudflare 控制台中创建一个 R2 存储桶。
+2. 在存储桶的 **Settings** 中连接自定义域名，或开启它的公开 `r2.dev` 地址（Cloudflare 对它有限流，不建议用于生产环境）。
+3. 在存储桶的 **Settings** > **CORS policy** 中添加登录页上显示的策略（有复制按钮）。没有它，浏览器会拦截 PiCG 对存储桶的所有请求。PiCG 部署在 `https://picg.lu.fm` 时：
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://picg.lu.fm"],
+       "AllowedMethods": ["GET", "PUT", "DELETE", "HEAD"],
+       "AllowedHeaders": ["authorization", "content-type", "x-amz-content-sha256", "x-amz-date", "x-amz-copy-source", "if-match", "if-none-match"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+4. 创建一个 R2 API 令牌，权限选 **Object Read & Write**，只应用于图床存储桶，并复制它的 **Access Key ID** 和 **Secret Access Key**。
+5. 在 PiCG 中打开 **Cloudflare R2** 标签页，照存储桶设置页上显示的填入 **S3 API** 地址（`https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>`）、两个密钥和存储桶的公开地址，点击 **登录**。
+
+登录时 PiCG 会列出存储桶，并写入再删除 `.picg/check`，以确认密钥能读能写。请求被浏览器拦截时，提示会指向 CORS 策略。PiCG 无法检查令牌是否还能访问其他存储桶，所以请把它限定在图床存储桶上。同一账户下的更多存储桶可以在 **设置** 中添加，每个都有自己的公开地址。
+
+链接使用公开地址（`{public}/{path}`），缩略图也是。每张图片单独上传，并拒绝已被占用的名称，所以一批里可能有些失败、其余照常上传。重命名会复制对象再删除旧的。从其他仓库导入和 GitHub Pages 只适用于 GitHub。
 
 ## GitHub Pages
 
@@ -125,7 +157,7 @@ Note：早期的 PiCG 版本通过把图床分支复制到 `gh-pages` 分支来�
 
 ## 设置文件
 
-每个图床仓库的设置保存在其默认分支的 `.picg/settings.toml` 中。最后一次修改 3 秒后，PiCG 写入这个文件，每次写入一个 commit。主题、语言和动效只保存在本机。
+每个图床仓库的设置保存在其图床分支的 `.picg/settings.toml` 中，每个存储桶的设置保存在桶里的 `.picg/settings.toml` 中。最后一次修改 3 秒后，PiCG 写入这个文件（在 GitHub 上每次写入一个 commit）。主题、语言和动效只保存在本机。
 
 PicX（v3.0.x 及之后的版本）或早期 PiCG 版本保存的设置由单独的导入模块读取，并立即使用：包括仓库中图床分支或默认分支上的 `.settings`，以及 PiCG 部署在同一地址时它们存在浏览器里的数据。随后 PiCG 会询问是否用新格式保存并删除旧文件。在你同意之前，它会继续使用导入的设置，但不会把设置写入仓库。
 
@@ -153,7 +185,7 @@ pnpm exec playwright install --only-shell chromium
 pnpm e2e
 ```
 
-单元测试覆盖设置文件、设置合并、链接规则、文件命名、Token 混淆、元数据去除，以及从 PicX 和早期版本导入设置和 Token。端到端测试在无头 Chromium 中操作构建好的站点，GitHub API 由内存中的模拟实现代替，所以不需要 Token 和仓库，覆盖登录检查（包括被屏蔽和只读的仓库）、上传、重命名、删除、新建和按日期的子文件夹、1000 个文件的上限、可编辑的文件夹路径、设置同步、分支、默认分支改名、转换 PicX 的设置、减少动态效果的设置，以及新版本提示。
+单元测试覆盖设置文件、设置合并、链接规则、文件命名、Token 混淆、元数据去除，以及从 PicX 和早期版本导入设置和 Token。端到端测试在无头 Chromium 中操作构建好的站点，GitHub API 和 R2 API 由内存中的模拟实现代替（R2 的模拟会校验每个请求的签名），所以不需要 Token、密钥、仓库或存储桶，覆盖登录检查（包括被屏蔽和只读的仓库、错误或不能写入的 R2 密钥，以及缺少 CORS 策略）、上传、重命名、删除、新建和按日期的子文件夹、1000 个文件的上限、可编辑的文件夹路径、设置同步、分支、默认分支改名、记住的账号、转换 PicX 的设置、减少动态效果的设置，以及新版本提示。
 
 冒烟测试对着真实的 GitHub API 跑同样的流程，在测试仓库的一个临时分支上进行，结束后删除该分支：
 
@@ -184,7 +216,7 @@ pnpm e2e
 - 构建：Ubuntu 24.04.4 LTS（Linux 6.8）
   - Node.js 24.22.2
   - pnpm 12.16.1
-- 浏览器：Chrome for Testing 156.0.8078.4，无头模式，GitHub API 为模拟
+- 浏览器：Chrome for Testing 156.0.8078.4，无头模式，GitHub API 和 R2 API 为模拟
 
 ## 免责声明
 

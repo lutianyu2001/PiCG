@@ -24,7 +24,7 @@
     "lint": "eslint src scripts e2e",
     "format": "prettier --write .",
     "prepare": "husky",
-    "e2e": "playwright test e2e/app.spec.ts",
+    "e2e": "playwright test e2e/app.spec.ts e2e/r2.spec.ts",
     "e2e:real": "node scripts/e2e-real.mjs"
   },
   "lint-staged": {
@@ -47,6 +47,7 @@
     "@jsquash/avif": "^2.1.1",
     "@jsquash/jpeg": "^1.6.0",
     "@jsquash/webp": "^1.5.0",
+    "aws4fetch": "1.0.20",
     "bootstrap-icons": "1.13.1",
     "date-fns": "4.1.0",
     "libheif-js": "1.23.5",

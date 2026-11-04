@@ -12,7 +12,7 @@ import { LinkService } from '../links/link.service'
 import {
   PAGES_RULE,
   allFormats,
-  allRules,
+  builtInRules,
   formatLink,
   formatProblem,
   newTemplateId,
@@ -50,7 +50,8 @@ export class LinksSection {
   private readonly session = inject(SessionStore)
 
   protected readonly link = computed(() => this.store.settings().link)
-  protected readonly rules = computed(() => allRules(this.link()))
+  protected readonly rules = this.links.rules
+  protected readonly isR2 = computed(() => this.links.kind() === 'r2')
   protected readonly formats = computed(() => allFormats(this.link()))
   protected readonly pagesOff = computed(() => this.pages.status().enabled === false)
   protected readonly pagesSelected = computed(() => this.link().rule === PAGES_RULE)
@@ -135,7 +136,7 @@ export class LinksSection {
     this.store.update((draft) => {
       draft.link[kind] = draft.link[kind].filter((x) => x.id !== id)
       if (kind === 'rules' && draft.link.rule === id) {
-        draft.link.rule = 'github'
+        draft.link.rule = builtInRules(this.links.kind())[0].id
       }
       if (kind === 'formats' && draft.link.format === id) {
         draft.link.format = 'url'

@@ -49,6 +49,19 @@
           <mat-icon svgIcon="logout" />{{ 'account.sign_out' | t }}
         </button>
       </mat-menu>
+    } @else if (session.r2(); as r2) {
+      <button matIconButton [matMenuTriggerFor]="account" [attr.aria-label]="'account.menu' | t">
+        <mat-icon svgIcon="cloud" />
+      </button>
+      <mat-menu #account="matMenu" xPosition="before">
+        <div class="account-head">
+          <strong>Cloudflare R2</strong>
+          <span class="muted">{{ accountLabel(r2.endpoint) }}</span>
+        </div>
+        <button mat-menu-item (click)="signOut()">
+          <mat-icon svgIcon="logout" />{{ 'account.sign_out' | t }}
+        </button>
+      </mat-menu>
     }
   </header>
 

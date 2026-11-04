@@ -1,7 +1,8 @@
 # CLAUDE.md
 
-PiCG is a browser-only image host on GitHub: an Angular app that stores images in the user's own repository through
-the GitHub REST API with a fine-grained token. `docs/spec.md` is the functional spec; README.md covers usage.
+PiCG is a browser-only image host: an Angular app that stores images in the user's own GitHub repository through
+the GitHub REST API with a fine-grained token, or in a Cloudflare R2 bucket through its S3 API with R2 keys.
+`docs/spec.md` is the functional spec; README.md covers usage.
 
 ## Commands
 
@@ -12,7 +13,7 @@ the GitHub REST API with a fine-grained token. `docs/spec.md` is the functional 
 | `pnpm lint`      | ESLint over `src`, `scripts` and `e2e`                                                  |
 | `pnpm typecheck` | Type check with the Angular compiler                                                    |
 | `pnpm test`      | Unit tests (Vitest)                                                                     |
-| `pnpm e2e`       | End-to-end tests of the built site against a fake GitHub API (run `pnpm build` first)   |
+| `pnpm e2e`       | End-to-end tests of the built site against fake GitHub and R2 APIs (`pnpm build` first) |
 | `pnpm e2e:real`  | Smoke test against the real GitHub API; needs `PICG_E2E_TOKEN_FILE` and `PICG_E2E_REPO` |
 
 The Angular CLI needs Node.js ≥24.15; the pnpm-managed Node.js 24.22.2 (devEngines) is in
@@ -58,6 +59,12 @@ The Angular CLI needs Node.js ≥24.15; the pnpm-managed Node.js 24.22.2 (devEng
 - Layouts that change with width are checked at common laptop widths (1024, 1152, 1366 px) with the sidebar
   expanded, which takes 208 px; the sign-in page first split into two columns only from 60rem, so on the user's
   screen it stayed one narrow column unless the sidebar was collapsed, while a check at 1280 px looked fine.
+- Git trees list every folder, R2 listings list none (only keys, and `dir/` markers made in the dashboard). The
+  library's folder index first linked a folder to its parent only when it created the parent, which Git's folder
+  entries hid; with R2, `2026/11/a.png` left `2026` out of the root. Code that builds folders from paths must link
+  every level. The R2 end-to-end tests (`e2e/r2.spec.ts`) cover it.
+- In @angular/material 22.2.5 the buttons of a single-selection mat-button-toggle-group have the role radio, not
+  button; tests find the sign-in tabs with getByRole('radio').
 
 ## Decisions
 

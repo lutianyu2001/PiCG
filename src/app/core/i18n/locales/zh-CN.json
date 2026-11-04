@@ -34,9 +34,9 @@
     "github_profile": "GitHub 主页",
     "sign_out": "退出登录",
     "sign_out_title": "退出 PiCG？",
-    "keep_data": "在这台设备上保留 Token 和设置",
-    "keep_note": "下次登录时表单已经填好。",
-    "remove_note": "从这个浏览器中删除 Token、仓库列表和缓存的设置。主题和语言保留。"
+    "keep_data": "在这台设备上保留这个账号",
+    "keep_note": "它会留在登录页上，点一下就能再次登录。",
+    "remove_note": "从这个浏览器中删除这个账号的 Token 或密钥，以及缓存的设置。主题和语言保留。"
   },
   "api_error": {
     "network": "连不上 GitHub，请检查网络后重试。",
@@ -73,7 +73,7 @@
       "friday": "周五快乐",
       "weekend": "周末愉快"
     },
-    "subtitle": "把图片存在你自己的 GitHub 仓库里，用链接分享。",
+    "subtitle": "把图片存在你自己的 GitHub 仓库或 Cloudflare R2 存储桶里，用链接分享。",
     "step_repo": "创建一个公开仓库，比如 {repo}：",
     "step_repo_link": "创建仓库",
     "step_repo_branch": "建议把默认分支命名为 gh-pages，这样 PiCG 和 GitHub Pages 用的是同一个分支。已有的仓库可以在仓库的 Branches 页面给分支改名，PiCG 会自动跟上。",
@@ -112,7 +112,15 @@
     },
     "create_branch_title": "创建 {branch} 分支？",
     "create_branch_message": "{repo} 中没有名为 {branch} 的分支。要从默认分支创建它吗？",
-    "create_branch": "创建分支"
+    "create_branch": "创建分支",
+    "accounts": "这台设备上的账号",
+    "use_account": "以 {name} 登录",
+    "forget": "从这台设备上移除",
+    "forget_title": "移除这个账号？",
+    "forget_message": "将从这台设备上删除 {name} 及其缓存的设置。图片本身不受影响。",
+    "another_account": "使用其他账号",
+    "back_to_accounts": "返回账号列表",
+    "provider": "图片存放在哪里"
   },
   "library": {
     "repository": "仓库",
@@ -161,7 +169,10 @@
     "next": "下一张",
     "path_edit": "文件夹路径，可编辑",
     "path_placeholder": "根目录",
-    "path_invalid": "这里没有名为 {name} 的文件夹。请选择已有的文件夹，或用“新建文件夹”创建。"
+    "path_invalid": "这里没有名为 {name} 的文件夹。请选择已有的文件夹，或用“新建文件夹”创建。",
+    "truncated_r2": "存储桶里的文件超过 100,000 个，这里缺了一部分。",
+    "local_folder_r2": "R2 不保存空文件夹，所以在上传图片之前，这个文件夹只存在于 PiCG 中。",
+    "not_public": "公开地址上没有"
   },
   "links": {
     "copy": "复制链接",
@@ -231,7 +242,7 @@
     "sync_saving": "正在保存到 {repo}…",
     "sync_saved": "已保存到 {repo}。",
     "sync_blocked": "这个仓库中有 PicX 或旧版 PiCG 保存的设置。转换之前，设置不会保存到仓库。",
-    "sync_error": "设置没能保存到仓库，已保留在这台设备上。",
+    "sync_error": "设置没能保存到 {repo}，已保留在这台设备上。",
     "account": "账号与仓库",
     "user": "GitHub 用户",
     "token": "Token",
@@ -329,7 +340,24 @@
     "branch_note": "图片、设置和 CNAME 都从这个分支读取、写入这个分支。GitHub Pages 只能发布一个分支，所以只有 Pages 发布的是这个分支时，GitHub Pages 链接才能用。建议使用名为 gh-pages 的分支。",
     "branch_changed": "{repo} 现在使用 {branch} 分支",
     "strip_metadata": "去除照片元数据",
-    "strip_metadata_desc": "对不压缩直接上传的 JPEG、PNG 和 WebP 文件，去掉 EXIF 等数据，比如拍摄地点和相机型号。压缩或加了水印的图片本来就不会保留这些数据。图片方向和色彩配置文件会保留。"
+    "strip_metadata_desc": "对不压缩直接上传的 JPEG、PNG 和 WebP 文件，去掉 EXIF 等数据，比如拍摄地点和相机型号。压缩或加了水印的图片本来就不会保留这些数据。图片方向和色彩配置文件会保留。",
+    "r2_account": "账户和存储桶",
+    "r2_account_id": "账户 ID",
+    "replace_keys": "更换密钥",
+    "replace_keys_hint": "新密钥会像登录时一样检查。",
+    "keys_saved": "密钥已更换",
+    "buckets": "图床存储桶",
+    "buckets_note": "每个存储桶在 .picg/settings.toml 中保存自己的设置。",
+    "add_bucket": "添加存储桶",
+    "add_bucket_hint": "同一账户下、令牌能读写的存储桶。",
+    "bucket_name": "存储桶名称",
+    "bucket_invalid": "存储桶名称由 3 到 63 个小写字母、数字和连字符组成。",
+    "bucket_exists": "这个存储桶已经在列表中了。",
+    "bucket_added": "已添加 {bucket}",
+    "edit_public_url": "修改公开地址",
+    "public_url_saved": "公开地址已保存",
+    "remove_bucket": "从 PiCG 中移除",
+    "remove_bucket_message": "PiCG 将不再使用 {bucket}。存储桶里的内容不会被删除。"
   },
   "tools": {
     "intro": "这些工具在浏览器中运行，不需要登录，也不会上传任何东西。",
@@ -359,5 +387,54 @@
     "license": "PiCG 以 Apache License 2.0 开源。",
     "view_license": "许可证",
     "view_source": "源代码"
+  },
+  "login_r2": {
+    "step_bucket": "在 Cloudflare R2 中创建一个存储桶：",
+    "step_bucket_link": "打开 R2",
+    "step_public": "在存储桶的“设置”中连接自定义域名，或开启它的公开 r2.dev 地址。",
+    "step_public_dev": "Cloudflare 对 r2.dev 地址有限流，不建议用于生产环境，最好使用自定义域名。",
+    "step_cors": "在存储桶的“设置”中添加下面的 CORS 策略，浏览器才允许 PiCG 访问这个存储桶：",
+    "copy_cors": "复制 CORS 策略",
+    "step_token": "创建一个 R2 API 令牌：",
+    "step_token_link": "创建令牌",
+    "step_token_permission": "权限选 Object Read & Write，仅应用于指定存储桶，并且只选图床存储桶。",
+    "step_token_keys": "复制它的 Access Key ID 和 Secret Access Key。Secret 只显示一次。",
+    "s3_address": "S3 API 地址",
+    "s3_address_hint": "照存储桶“设置”页上显示的填写，以存储桶名结尾。",
+    "access_key_id": "Access Key ID",
+    "secret_access_key": "Secret Access Key",
+    "show_secret": "显示 Secret Access Key",
+    "hide_secret": "隐藏 Secret Access Key",
+    "public_url": "公开地址",
+    "public_url_hint": "存储桶的自定义域名或 r2.dev 地址。链接和缩略图都用它。",
+    "keys_required": "请填写 Access Key ID 和 Secret Access Key。",
+    "checking": "正在通过 Cloudflare R2 检查密钥…",
+    "storage_note": "密钥以混淆后的形式保存在这个浏览器中，只能防止被一眼看到，并不是加密。PiCG 无法检查令牌是否还能访问其他存储桶，所以请把它限定在图床存储桶上。",
+    "fail": {
+      "address": "请填写存储桶的 S3 API 地址，例如 https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>。",
+      "public_url": "请填写存储桶的公开地址，以 https:// 开头。",
+      "blocked": "浏览器拦截了对存储桶 {bucket} 的请求。多半是没有配置 CORS 策略，或者策略里没有这个网站：请添加第 3 步中的策略后重试，生效可能需要一分钟左右。",
+      "network": "无法连接 Cloudflare R2。请检查网络后重试。",
+      "invalid": "Cloudflare R2 不接受这组密钥。请检查 Access Key ID 和 Secret Access Key。",
+      "bucket_missing": "这个账户下没有存储桶 {bucket}。",
+      "no_read": "这组密钥无法读取存储桶 {bucket}。请给令牌这个存储桶的 Object Read & Write 权限。",
+      "no_write": "这组密钥无法写入存储桶 {bucket}。请给令牌 Object Read & Write 权限，而不是只读。",
+      "unexpected": "Cloudflare R2 返回了意外的错误（HTTP {status}）。"
+    }
+  },
+  "r2_error": {
+    "network": "无法连接 Cloudflare R2。请检查网络后重试。",
+    "rate_limit": "Cloudflare R2 要求降低请求频率。请稍等片刻后重试。",
+    "unauthorized": "Cloudflare R2 不接受这组密钥，可能已被撤销。请在设置中更换。",
+    "forbidden": "这组密钥没有执行此操作的权限。请检查令牌的权限。",
+    "not_found": "Cloudflare R2 找不到它，可能已被移动或删除。",
+    "conflict": "文件在此期间被改动了，或者名称已被占用。请刷新后重试。",
+    "validation": "Cloudflare R2 拒绝了这个请求。",
+    "too_large": "文件太大，Cloudflare R2 无法接收。",
+    "blocked": "浏览器拦截了这个请求。存储桶的 CORS 策略里可能没有这个网站。",
+    "server": "Cloudflare R2 出了问题。请稍后再试。",
+    "unknown": "出了点问题。",
+    "rename_incomplete": "图片已复制为新名称，但旧文件没能删除，所以存储桶里两个都在。",
+    "delete_incomplete": "有些图片没能删除。请刷新查看剩下哪些。"
   }
 }

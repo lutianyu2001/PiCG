@@ -10,6 +10,10 @@ export type StorageErrorKind =
   | 'blocked'
   | 'server'
   | 'unknown'
+  /** A rename copied the file but could not delete the old one, so both exist. */
+  | 'rename_incomplete'
+  /** Some of the files of a delete could not be deleted. */
+  | 'delete_incomplete'
 
 /** A failed request to a storage service. `service` picks the wording of the message shown for it. */
 export class StorageError extends Error {

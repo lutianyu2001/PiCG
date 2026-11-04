@@ -53,6 +53,8 @@ export type CardAction = 'copy' | 'properties' | 'rename' | 'delete'
         />
         @if (notPublished()) {
           <span class="badge">{{ 'library.not_on_pages' | t }}</span>
+        } @else if (unreachable()) {
+          <span class="badge">{{ 'library.not_public' | t }}</span>
         }
       </button>
       <mat-checkbox
@@ -105,6 +107,8 @@ export class ImageCard {
   protected readonly notPublished = computed(
     () => this.failed() && this.links.rule().id === PAGES_RULE
   )
+  /** A bucket's image could not be loaded from its public address either. */
+  protected readonly unreachable = signal(false)
 
   protected onClick(event: MouseEvent) {
     if (this.selecting() || event.shiftKey || event.ctrlKey || event.metaKey) {
@@ -115,8 +119,10 @@ export class ImageCard {
   }
 
   protected onError() {
-    if (!this.failed()) {
-      this.failed.set(true)
+    const path = this.file().path
+    if (this.failed() || this.links.url(path) === this.links.rawUrl(path)) {
+      this.unreachable.set(this.links.kind() === 'r2')
     }
+    this.failed.set(true)
   }
 }

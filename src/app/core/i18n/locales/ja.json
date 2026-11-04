@@ -34,9 +34,9 @@
     "github_profile": "GitHub プロフィール",
     "sign_out": "サインアウト",
     "sign_out_title": "PiCG からサインアウトしますか？",
-    "keep_data": "この端末にトークンと設定を残す",
-    "keep_note": "次回はサインインフォームが入力済みになります。",
-    "remove_note": "トークン、リポジトリ一覧、キャッシュした設定をこのブラウザから削除します。テーマと言語は残ります。"
+    "keep_data": "この端末にこのアカウントを残す",
+    "keep_note": "サインインページに残り、ワンクリックで再びサインインできます。",
+    "remove_note": "このアカウントのトークンまたはキーと、キャッシュした設定をこのブラウザから削除します。テーマと言語は残ります。"
   },
   "api_error": {
     "network": "GitHub に接続できません。接続を確認してもう一度お試しください。",
@@ -73,7 +73,7 @@
       "friday": "金曜日ですね",
       "weekend": "良い週末を"
     },
-    "subtitle": "画像を自分の GitHub リポジトリに保存し、リンクで共有します。",
+    "subtitle": "画像を自分の GitHub リポジトリまたは Cloudflare R2 バケットに保存し、リンクで共有します。",
     "step_repo": "公開リポジトリを作成します（例：{repo}）：",
     "step_repo_link": "リポジトリを作成",
     "step_repo_branch": "デフォルトブランチの名前は gh-pages にすることをおすすめします。PiCG と GitHub Pages が同じブランチを使うようになります。既存のリポジトリでは、リポジトリの Branches ページでブランチ名を変更できます。PiCG は名前の変更に自動で追従します。",
@@ -112,7 +112,15 @@
     },
     "create_branch_title": "{branch} ブランチを作成しますか？",
     "create_branch_message": "{repo} に {branch} という名前のブランチがありません。デフォルトブランチから作成しますか？",
-    "create_branch": "ブランチを作成"
+    "create_branch": "ブランチを作成",
+    "accounts": "この端末のアカウント",
+    "use_account": "{name} としてサインイン",
+    "forget": "この端末から削除",
+    "forget_title": "このアカウントを削除しますか？",
+    "forget_message": "{name} とキャッシュした設定をこの端末から削除します。画像そのものはそのまま残ります。",
+    "another_account": "別のアカウントを使う",
+    "back_to_accounts": "アカウント一覧に戻る",
+    "provider": "画像の保存先"
   },
   "library": {
     "repository": "リポジトリ",
@@ -161,7 +169,10 @@
     "next": "次へ",
     "path_edit": "フォルダのパス（編集可）",
     "path_placeholder": "ルートフォルダ",
-    "path_invalid": "ここに {name} というフォルダはありません。既存のフォルダを選ぶか、「新しいフォルダ」で作成してください。"
+    "path_invalid": "ここに {name} というフォルダはありません。既存のフォルダを選ぶか、「新しいフォルダ」で作成してください。",
+    "truncated_r2": "バケットのファイルが 100,000 個を超えているため、一部が表示されていません。",
+    "local_folder_r2": "R2 は空のフォルダを保存しないため、画像をアップロードするまで、このフォルダは PiCG の中にだけ存在します。",
+    "not_public": "公開アドレスにありません"
   },
   "links": {
     "copy": "リンクをコピー",
@@ -231,7 +242,7 @@
     "sync_saving": "{repo} に保存しています…",
     "sync_saved": "{repo} に保存しました。",
     "sync_blocked": "このリポジトリには PicX または以前の PiCG が保存した設定があります。変換するまで、設定はリポジトリに保存されません。",
-    "sync_error": "設定をリポジトリに保存できませんでした。この端末には残っています。",
+    "sync_error": "設定を {repo} に保存できませんでした。この端末には残っています。",
     "account": "アカウントとリポジトリ",
     "user": "GitHub ユーザー",
     "token": "トークン",
@@ -329,7 +340,24 @@
     "branch_note": "画像、設定、CNAME はこのブランチから読み込み、このブランチに書き込みます。GitHub Pages は 1 つのブランチしか公開できないため、Pages がこのブランチを公開している場合にだけ GitHub Pages のリンクが使えます。gh-pages という名前のブランチをおすすめします。",
     "branch_changed": "{repo} は {branch} ブランチを使うようになりました",
     "strip_metadata": "写真のメタデータを削除",
-    "strip_metadata_desc": "圧縮せずにアップロードする JPEG、PNG、WebP ファイルから、撮影場所やカメラなどの EXIF データを削除します。圧縮や透かしを入れた画像にはもともと残りません。向きとカラープロファイルは残します。"
+    "strip_metadata_desc": "圧縮せずにアップロードする JPEG、PNG、WebP ファイルから、撮影場所やカメラなどの EXIF データを削除します。圧縮や透かしを入れた画像にはもともと残りません。向きとカラープロファイルは残します。",
+    "r2_account": "アカウントとバケット",
+    "r2_account_id": "アカウント ID",
+    "replace_keys": "キーを差し替える",
+    "replace_keys_hint": "新しいキーはサインイン時と同じようにチェックされます。",
+    "keys_saved": "キーを差し替えました",
+    "buckets": "画像用バケット",
+    "buckets_note": "各バケットは .picg/settings.toml に自分の設定を保存します。",
+    "add_bucket": "バケットを追加",
+    "add_bucket_hint": "同じアカウントで、トークンが読み書きできるバケット。",
+    "bucket_name": "バケット名",
+    "bucket_invalid": "バケット名は 3〜63 文字の英小文字、数字、ハイフンです。",
+    "bucket_exists": "そのバケットはすでに一覧にあります。",
+    "bucket_added": "{bucket} を追加しました",
+    "edit_public_url": "公開アドレスを変更",
+    "public_url_saved": "公開アドレスを保存しました",
+    "remove_bucket": "PiCG から外す",
+    "remove_bucket_message": "PiCG は {bucket} を使わなくなります。バケットの中身は削除されません。"
   },
   "tools": {
     "intro": "これらのツールはブラウザ内で動作し、サインインは不要です。何もアップロードされません。",
@@ -359,5 +387,54 @@
     "license": "PiCG は Apache License 2.0 のオープンソースソフトウェアです。",
     "view_license": "ライセンス",
     "view_source": "ソースコード"
+  },
+  "login_r2": {
+    "step_bucket": "Cloudflare R2 でバケットを作成します：",
+    "step_bucket_link": "R2 を開く",
+    "step_public": "バケットの「設定」でカスタムドメインを接続するか、公開 r2.dev アドレスを有効にします。",
+    "step_public_dev": "r2.dev アドレスは Cloudflare によって制限されており、本番利用は推奨されていません。カスタムドメインをおすすめします。",
+    "step_cors": "バケットの「設定」に次の CORS ポリシーを追加します。これでブラウザが PiCG からバケットへのアクセスを許可します：",
+    "copy_cors": "CORS ポリシーをコピー",
+    "step_token": "R2 API トークンを作成します：",
+    "step_token_link": "トークンを作成",
+    "step_token_permission": "権限は Object Read & Write、特定のバケットにのみ適用し、画像用バケットだけを選びます。",
+    "step_token_keys": "Access Key ID と Secret Access Key をコピーします。Secret は一度しか表示されません。",
+    "s3_address": "S3 API アドレス",
+    "s3_address_hint": "バケットの「設定」ページの表示どおり、バケット名で終わるものを入力します。",
+    "access_key_id": "Access Key ID",
+    "secret_access_key": "Secret Access Key",
+    "show_secret": "Secret Access Key を表示",
+    "hide_secret": "Secret Access Key を隠す",
+    "public_url": "公開アドレス",
+    "public_url_hint": "バケットのカスタムドメインまたは r2.dev アドレス。リンクとサムネイルに使います。",
+    "keys_required": "Access Key ID と Secret Access Key を入力してください。",
+    "checking": "Cloudflare R2 でキーを確認しています…",
+    "storage_note": "キーは難読化した形でこのブラウザに保存されます。一目で読めないようにするだけで、暗号化ではありません。トークンがほかのバケットにもアクセスできるかは PiCG からは確認できないため、画像用バケットに限定してください。",
+    "fail": {
+      "address": "バケットの S3 API アドレスを入力してください（例：https://<ACCOUNT_ID>.r2.cloudflarestorage.com/<BUCKET>）。",
+      "public_url": "バケットの公開アドレスを https:// から入力してください。",
+      "blocked": "バケット {bucket} へのリクエストをブラウザがブロックしました。CORS ポリシーがないか、このサイトが含まれていない可能性が高いです。手順 3 のポリシーを追加してから再試行してください。反映まで 1 分ほどかかることがあります。",
+      "network": "Cloudflare R2 に接続できませんでした。接続を確認して再試行してください。",
+      "invalid": "Cloudflare R2 がキーを受け付けませんでした。Access Key ID と Secret Access Key を確認してください。",
+      "bucket_missing": "このアカウントにバケット {bucket} はありません。",
+      "no_read": "このキーではバケット {bucket} を読み取れません。トークンにこのバケットの Object Read & Write を付けてください。",
+      "no_write": "このキーではバケット {bucket} に書き込めません。読み取り専用ではなく Object Read & Write を付けてください。",
+      "unexpected": "Cloudflare R2 が予期しないエラーを返しました（HTTP {status}）。"
+    }
+  },
+  "r2_error": {
+    "network": "Cloudflare R2 に接続できませんでした。接続を確認して再試行してください。",
+    "rate_limit": "Cloudflare R2 からリクエストを減らすよう求められました。少し待ってから再試行してください。",
+    "unauthorized": "Cloudflare R2 がキーを受け付けませんでした。取り消された可能性があります。設定で差し替えてください。",
+    "forbidden": "このキーにはこの操作の権限がありません。トークンの権限を確認してください。",
+    "not_found": "Cloudflare R2 で見つかりませんでした。移動または削除された可能性があります。",
+    "conflict": "その間にファイルが変更されたか、名前が使われています。更新してから再試行してください。",
+    "validation": "Cloudflare R2 がリクエストを拒否しました。",
+    "too_large": "ファイルが大きすぎて Cloudflare R2 に保存できません。",
+    "blocked": "ブラウザがリクエストをブロックしました。バケットの CORS ポリシーにこのサイトが含まれていない可能性があります。",
+    "server": "Cloudflare R2 で問題が発生しました。後でもう一度お試しください。",
+    "unknown": "問題が発生しました。",
+    "rename_incomplete": "画像は新しい名前にコピーされましたが、元のファイルを削除できなかったため、両方がバケットに残っています。",
+    "delete_incomplete": "一部の画像を削除できませんでした。更新して残ったものを確認してください。"
   }
 }

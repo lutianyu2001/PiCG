@@ -11,6 +11,7 @@ import checkCircle from '@material-symbols/svg-400/outlined/check_circle.svg'
 import chevronLeft from '@material-symbols/svg-400/outlined/chevron_left.svg'
 import chevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg'
 import close from '@material-symbols/svg-400/outlined/close.svg'
+import cloud from '@material-symbols/svg-400/outlined/cloud.svg'
 import cloudDone from '@material-symbols/svg-400/outlined/cloud_done.svg'
 import cloudUpload from '@material-symbols/svg-400/outlined/cloud_upload.svg'
 import construction from '@material-symbols/svg-400/outlined/construction.svg'
@@ -34,6 +35,7 @@ import logout from '@material-symbols/svg-400/outlined/logout.svg'
 import moreVert from '@material-symbols/svg-400/outlined/more_vert.svg'
 import openInNew from '@material-symbols/svg-400/outlined/open_in_new.svg'
 import person from '@material-symbols/svg-400/outlined/person.svg'
+import personAdd from '@material-symbols/svg-400/outlined/person_add.svg'
 import photoLibrary from '@material-symbols/svg-400/outlined/photo_library.svg'
 import photoLibraryFill from '@material-symbols/svg-400/outlined/photo_library-fill.svg'
 import refresh from '@material-symbols/svg-400/outlined/refresh.svg'
@@ -66,6 +68,7 @@ const ICONS: Record<string, string> = {
   'chevron-left': chevronLeft,
   'chevron-right': chevronRight,
   close,
+  cloud,
   'cloud-done': cloudDone,
   'cloud-upload': cloudUpload,
   construction,
@@ -89,6 +92,7 @@ const ICONS: Record<string, string> = {
   'more-vert': moreVert,
   'open-in-new': openInNew,
   person,
+  'person-add': personAdd,
   'photo-library': photoLibrary,
   'photo-library-fill': photoLibraryFill,
   'moon-stars-fill': moonStarsFill,
