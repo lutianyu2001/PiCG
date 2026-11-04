@@ -1,0 +1,76 @@
+{
+  "name": "picg",
+  "version": "4.0.0",
+  "description": "Image hosting on GitHub repositories, in the browser",
+  "license": "Apache-2.0",
+  "author": "Tianyu (Sky) Lu",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.22.2",
+      "onFail": "download"
+    }
+  },
+  "scripts": {
+    "wasm": "node scripts/copy-wasm.mjs",
+    "dev": "pnpm wasm && ng serve --port 4000 --open",
+    "build": "pnpm wasm && ng build",
+    "serve": "node scripts/serve-dist.mjs",
+    "typecheck": "ngc -p tsconfig.app.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src scripts e2e",
+    "format": "prettier --write .",
+    "prepare": "husky",
+    "e2e": "playwright test e2e/app.spec.ts",
+    "e2e:real": "node scripts/e2e-real.mjs"
+  },
+  "lint-staged": {
+    "*.{ts,html,mjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{scss,json,md}": "prettier --write"
+  },
+  "dependencies": {
+    "@angular/cdk": "22.2.5",
+    "@angular/common": "22.2.4",
+    "@angular/compiler": "22.2.4",
+    "@angular/core": "22.2.4",
+    "@angular/forms": "22.2.4",
+    "@angular/material": "22.2.5",
+    "@angular/platform-browser": "22.2.4",
+    "@angular/router": "22.2.4",
+    "@angular/service-worker": "22.2.4",
+    "@jsquash/avif": "^2.1.1",
+    "@jsquash/jpeg": "^1.6.0",
+    "@jsquash/webp": "^1.5.0",
+    "bootstrap-icons": "1.13.1",
+    "date-fns": "4.1.0",
+    "libheif-js": "1.23.5",
+    "rxjs": "7.8.2",
+    "smol-toml": "1.5.0",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.5",
+    "@angular/cli": "22.2.5",
+    "@angular/compiler-cli": "22.2.4",
+    "@eslint/js": "^10.0.1",
+    "@material-symbols/svg-400": "^0.48.2",
+    "@playwright/test": "1.64.1",
+    "@types/node": "^26.6.6",
+    "angular-eslint": "^22.6.0",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "typescript": "6.0.2",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "5.0.0"
+  }
+}

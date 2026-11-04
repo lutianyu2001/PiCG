@@ -1,0 +1,174 @@
+<div class="library" [class.with-queue]="queue.items().length">
+  <div class="main" pgFileDrop (pgFileDrop)="add($event)">
+    <div class="toolbar">
+      @if (session.repos().length > 1) {
+        <mat-select
+          class="repo"
+          panelWidth=""
+          [attr.aria-label]="'library.repository' | t"
+          [value]="session.repo()?.name"
+          (selectionChange)="switchRepo($event.value)"
+        >
+          @for (repo of session.repos(); track repo.name) {
+            <mat-option [value]="repo.name">{{ repo.name }}</mat-option>
+          }
+        </mat-select>
+      } @else {
+        <span class="repo single">{{ session.repo()?.name }}</span>
+      }
+
+      <pg-path-field (navigate)="open($event)" />
+
+      <button matButton="filled" class="upload-btn" (click)="pick()">
+        <mat-icon svgIcon="upload" />{{ 'library.upload' | t }}
+      </button>
+      <button
+        matIconButton
+        [matTooltip]="'library.new_folder' | t"
+        [attr.aria-label]="'library.new_folder' | t"
+        (click)="actions.newFolder()"
+      >
+        <mat-icon svgIcon="create-new-folder" />
+      </button>
+      <button
+        matIconButton
+        [matTooltip]="'library.refresh' | t"
+        [attr.aria-label]="'library.refresh' | t"
+        (click)="library.reload()"
+      >
+        <mat-icon svgIcon="refresh" />
+      </button>
+      <button matIconButton [matMenuTriggerFor]="more" [attr.aria-label]="'common.more' | t">
+        <mat-icon svgIcon="more-vert" />
+      </button>
+      <mat-menu #more="matMenu" xPosition="before">
+        <button mat-menu-item (click)="actions.importFromRepo()">
+          <mat-icon svgIcon="download" />{{ 'import.title' | t }}
+        </button>
+      </mat-menu>
+      <input
+        #picker
+        class="visually-hidden"
+        type="file"
+        [accept]="accept"
+        multiple
+        tabindex="-1"
+        (change)="picked(picker)"
+      />
+    </div>
+
+    @if (library.loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (selecting()) {
+      <div
+        class="selection"
+        role="toolbar"
+        animate.enter="pg-enter-bar"
+        animate.leave="pg-leave"
+        [attr.aria-label]="'library.selection' | t"
+      >
+        <button
+          matIconButton
+          [attr.aria-label]="'library.clear_selection' | t"
+          (click)="clearSelection()"
+        >
+          <mat-icon svgIcon="close" />
+        </button>
+        <span class="count">{{ 'library.selected' | t: { count: selected().size } }}</span>
+        <span class="spacer"></span>
+        <button matButton (click)="selectAll()">
+          <mat-icon svgIcon="select-all" />{{ 'library.select_all' | t }}
+        </button>
+        <button matButton (click)="copySelected()">
+          <mat-icon svgIcon="content-copy" />{{ 'links.copy' | t }}
+        </button>
+        <button matButton (click)="deleteSelected()">
+          <mat-icon svgIcon="delete" />{{ 'common.delete' | t }}
+        </button>
+      </div>
+    }
+
+    <div class="scroll">
+      <div class="notices">
+        @if (pagesRule()) {
+          <pg-pages-notice animate.enter="pg-enter" [problemsOnly]="true" />
+        }
+        @if (errorKey()) {
+          <div class="notice warn" role="alert" animate.enter="pg-enter">
+            <mat-icon svgIcon="error" />
+            <p>{{ 'library.load_failed' | t }} {{ errorKey() | t }}</p>
+          </div>
+        }
+        @if (library.truncated()) {
+          <div class="notice warn" animate.enter="pg-enter">
+            <mat-icon svgIcon="warning" />
+            <p>{{ 'library.truncated' | t }}</p>
+          </div>
+        }
+        @if (library.isLocalFolder()) {
+          <div class="notice" animate.enter="pg-enter">
+            <mat-icon svgIcon="info" />
+            <p>{{ 'library.local_folder' | t }}</p>
+          </div>
+        }
+      </div>
+
+      @if (library.folders().length) {
+        <ul class="folders">
+          @for (folder of library.folders(); track folder) {
+            <li animate.enter="pg-enter-item" [style.--pg-i]="$index">
+              <button
+                class="folder"
+                type="button"
+                matRipple
+                pgFileDrop
+                (pgFileDrop)="add($event, folder)"
+                (click)="open(folder)"
+              >
+                <mat-icon svgIcon="folder" />
+                <span class="folder-name">{{ baseName(folder) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (library.images().length) {
+        <ul class="grid">
+          @for (file of library.images(); track file.path) {
+            <li animate.enter="pg-enter-item" [style.--pg-i]="library.folders().length + $index">
+              <pg-image-card
+                [file]="file"
+                [selected]="selected().has(file.path)"
+                [selecting]="selecting()"
+                [busy]="actions.busy().has(file.path)"
+                (pick)="toggle(file, $event)"
+                (view)="actions.view(file, library.images())"
+                (action)="act(file, $event)"
+              />
+            </li>
+          }
+        </ul>
+      }
+
+      @if (empty() && library.loaded()) {
+        <button class="empty" type="button" animate.enter="pg-enter" (click)="pick()">
+          <mat-icon svgIcon="cloud-upload" />
+          <strong>{{ 'library.empty_title' | t }}</strong>
+          <span class="muted">{{ 'library.empty_hint' | t }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="drop-hint" aria-hidden="true">
+      <mat-icon svgIcon="cloud-upload" />
+      <span>{{ 'library.drop_here' | t: { path: library.path() || '/' } }}</span>
+    </div>
+  </div>
+
+  @if (queue.items().length) {
+    <pg-queue-panel class="queue" animate.enter="pg-enter-panel" />
+  }
+</div>

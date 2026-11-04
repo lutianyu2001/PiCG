@@ -1,0 +1,266 @@
+@use '@angular/material' as mat;
+
+// Fonts (loaded by src/app/core/fonts.ts): Inter for Latin text, Josefin Sans for Latin titles, and Noto Sans for
+// CJK, with the CJK font of the interface language first so that shared characters take that language's forms.
+// System fonts stand in until they arrive, and for the characters none of them has.
+html {
+  --pg-system-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --pg-cjk-font: 'Noto Sans SC Variable', 'Noto Sans TC Variable', 'Noto Sans JP Variable';
+  --pg-font: 'Inter Variable', var(--pg-cjk-font), var(--pg-system-font);
+  --pg-title-font: 'Josefin Sans Variable', var(--pg-font);
+
+  &:lang(zh-TW) {
+    --pg-cjk-font: 'Noto Sans TC Variable', 'Noto Sans SC Variable', 'Noto Sans JP Variable';
+  }
+
+  &:lang(ja) {
+    --pg-cjk-font: 'Noto Sans JP Variable', 'Noto Sans SC Variable', 'Noto Sans TC Variable';
+  }
+}
+
+html {
+  height: 100%;
+  color-scheme: light dark;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$blue-palette,
+        theme-type: color-scheme
+      ),
+      typography: (
+        plain-family: var(--pg-font),
+        brand-family: var(--pg-title-font)
+      ),
+      density: 0
+    )
+  );
+
+  // Placeholders, such as the default repository name, are greyer than typed text so they do not read as values.
+  @include mat.form-field-overrides(
+    (
+      outlined-input-text-placeholder-color: color-mix(
+          in srgb,
+          var(--mat-sys-on-surface) 38%,
+          transparent
+        ),
+      filled-input-text-placeholder-color: color-mix(
+          in srgb,
+          var(--mat-sys-on-surface) 38%,
+          transparent
+        )
+    )
+  );
+}
+
+// On phones, toasts sit above the bottom navigation instead of covering it.
+@media (max-width: 720px) {
+  .mat-mdc-snack-bar-container.mdc-snackbar {
+    margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+  background: var(--mat-sys-surface-container-high);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.page {
+  box-sizing: border-box;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.page-title {
+  margin: 0 0 1rem;
+  font: var(--mat-sys-headline-small);
+}
+
+.notice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container);
+  line-height: 1.5;
+
+  > mat-icon {
+    flex-shrink: 0;
+  }
+
+  &.warn {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  p {
+    margin: 0 0 0.25rem;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+// Motion, after the durations and easing curves of Material 3. Everything here applies only while motion is on
+// (data-motion on <html>, set by AppearanceStore from the setting and the system's reduced-motion preference);
+// otherwise elements appear and go at once. The classes are used with animate.enter and animate.leave.
+:root {
+  --pg-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --pg-ease-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --pg-ease-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+@keyframes pg-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pg-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pg-rise-in {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes pg-pop-in {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+}
+
+@keyframes pg-slide-out {
+  to {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes pg-drop-in {
+  from {
+    transform: translateY(-0.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes pg-panel-in-side {
+  from {
+    transform: translateX(2rem);
+    opacity: 0;
+  }
+}
+
+@keyframes pg-panel-in-bottom {
+  from {
+    transform: translateY(2rem);
+    opacity: 0;
+  }
+}
+
+:root[data-motion='on'] {
+  // Something new on the page: a notice, an error, a result.
+  .pg-enter {
+    animation: pg-rise-in 250ms var(--pg-ease-decelerate);
+  }
+
+  // Items of a grid or list, one after another (--pg-i is the item's index).
+  .pg-enter-item {
+    animation: pg-pop-in 250ms var(--pg-ease-decelerate) backwards;
+    animation-delay: calc(min(var(--pg-i, 0), 24) * 15ms);
+  }
+
+  // A bar that slides down from what is above it.
+  .pg-enter-bar {
+    animation: pg-drop-in 200ms var(--pg-ease-decelerate);
+  }
+
+  .pg-enter-fade,
+  .drag-over > .drop-hint {
+    animation: pg-fade-in 200ms var(--pg-ease-standard);
+  }
+
+  .pg-leave {
+    animation: pg-fade-out 150ms var(--pg-ease-accelerate) forwards;
+  }
+
+  .pg-leave-item {
+    animation: pg-slide-out 200ms var(--pg-ease-accelerate) forwards;
+  }
+
+  .pg-enter-panel {
+    animation: pg-panel-in-side 300ms var(--pg-ease-decelerate);
+
+    @media (max-width: 960px) {
+      animation-name: pg-panel-in-bottom;
+    }
+  }
+
+  // Changing pages fades the old one out and the new one in (Material's fade through); the top bar and the
+  // navigation stay. A change of theme or language cross-fades the whole window.
+  &.pg-route-transition {
+    &::view-transition-old(content) {
+      animation: pg-fade-out 90ms var(--pg-ease-accelerate) forwards;
+    }
+
+    &::view-transition-new(content) {
+      animation: pg-pop-in 210ms var(--pg-ease-decelerate) 90ms backwards;
+    }
+  }
+
+  &::view-transition-group(*) {
+    animation-duration: 250ms;
+  }
+}
+
+// Without motion, nothing moves: transitions written in component styles stop too, and a view transition (if one
+// starts anyway) ends at once.
+:root:not([data-motion='on']) *,
+:root:not([data-motion='on']) *::before,
+:root:not([data-motion='on']) *::after {
+  transition: none !important;
+}
+
+:root:not([data-motion='on'])::view-transition-group(*),
+:root:not([data-motion='on'])::view-transition-old(*),
+:root:not([data-motion='on'])::view-transition-new(*) {
+  animation: none;
+}

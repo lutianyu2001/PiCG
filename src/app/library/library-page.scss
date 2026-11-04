@@ -1,0 +1,214 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.library {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+
+  &.with-queue {
+    grid-template-columns: 1fr 24rem;
+  }
+}
+
+.main {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+
+  &.drag-over .drop-hint {
+    display: flex;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.repo {
+  width: auto;
+  min-width: 8rem;
+  max-width: 14rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-surface-container-high);
+  font: var(--mat-sys-title-small);
+
+  &.single {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+
+  .count {
+    font: var(--mat-sys-title-small);
+  }
+}
+
+.scroll {
+  flex: 1;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.folders,
+.grid {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.folders {
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+
+.grid {
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+}
+
+.folder {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+  color: inherit;
+  font: var(--mat-sys-body-medium);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 200ms var(--pg-ease-standard),
+    border-color 200ms var(--pg-ease-standard);
+
+  mat-icon {
+    flex-shrink: 0;
+    color: var(--mat-sys-primary);
+  }
+
+  &:hover {
+    background: var(--mat-sys-surface-container);
+  }
+
+  &.drag-over {
+    border-color: var(--mat-sys-primary);
+    background: var(--mat-sys-primary-container);
+  }
+}
+
+.folder-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  margin-top: 2rem;
+  padding: 3rem 1rem;
+  border: 2px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-extra-large);
+  background: none;
+  color: inherit;
+  font: var(--mat-sys-body-large);
+  cursor: pointer;
+
+  mat-icon {
+    width: 3rem;
+    height: 3rem;
+    color: var(--mat-sys-primary);
+  }
+}
+
+.drop-hint {
+  display: none;
+  position: absolute;
+  inset: 0.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--mat-sys-primary);
+  border-radius: var(--mat-sys-corner-extra-large);
+  background: color-mix(in srgb, var(--mat-sys-primary-container) 85%, transparent);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-title-medium);
+  pointer-events: none;
+
+  mat-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .library.with-queue {
+    grid-template-rows: 1fr minmax(0, 55%);
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .upload-btn {
+    order: 10;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+// On phones the path gets a row of its own.
+@media (max-width: 720px) {
+  pg-path-field {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .toolbar > :not(pg-path-field, .repo) {
+    order: 2;
+  }
+}

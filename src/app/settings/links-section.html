@@ -1,0 +1,115 @@
+<section class="section">
+  <h2>{{ 'settings.links' | t }}</h2>
+
+  <div class="row">
+    <span class="label">{{ 'settings.link_rule' | t }}</span>
+    <mat-form-field>
+      <mat-select [value]="link().rule" (selectionChange)="setRule($event.value)">
+        @for (rule of rules(); track rule.id) {
+          <mat-option [value]="rule.id" [disabled]="rule.id === PAGES_RULE && pagesOff()">
+            {{ rule.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div class="row">
+    <span class="label">{{ 'settings.link_format' | t }}</span>
+    <mat-form-field>
+      <mat-select [value]="link().format" (selectionChange)="setFormat($event.value)">
+        @for (format of formats(); track format.id) {
+          <mat-option [value]="format.id">
+            {{ format.builtIn && format.id === 'url' ? ('settings.format_url' | t) : format.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <p class="desc">
+    {{ 'settings.link_sample' | t }} <code>{{ sample() }}</code>
+  </p>
+
+  <h3>GitHub Pages</h3>
+  <pg-pages-notice />
+  @if (pagesSelected() || domain()) {
+    <div class="row domain">
+      <mat-form-field>
+        <mat-label>{{ 'settings.domain' | t }}</mat-label>
+        <input
+          matInput
+          name="domain"
+          autocomplete="off"
+          spellcheck="false"
+          [placeholder]="domainPlaceholder()"
+          [ngModel]="domain()"
+          (ngModelChange)="domainDraft.set($event)"
+        />
+      </mat-form-field>
+      @if (domainChanged()) {
+        <button matButton="filled" [disabled]="savingDomain()" (click)="saveDomain()">
+          {{ 'common.save' | t }}
+        </button>
+      }
+    </div>
+    <p class="desc">{{ 'settings.domain_desc' | t }}</p>
+  }
+
+  @for (kind of kinds; track kind) {
+    <h3>{{ 'settings.custom_' + kind | t }}</h3>
+    @let list = kind === 'rules' ? link().rules : link().formats;
+    @if (list.length) {
+      <ul class="list">
+        @for (item of list; track item.id) {
+          <li>
+            <span class="grow"
+              ><strong>{{ item.name }}</strong> <code>{{ item.template }}</code></span
+            >
+            <button
+              matIconButton
+              [attr.aria-label]="'common.delete' | t"
+              (click)="remove(kind, item.id)"
+            >
+              <mat-icon svgIcon="delete" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+    <div class="row">
+      <mat-form-field class="name">
+        <mat-label>{{ 'settings.template_name' | t }}</mat-label>
+        <input
+          matInput
+          [name]="kind + '-name'"
+          autocomplete="off"
+          [ngModel]="newName[kind]()"
+          (ngModelChange)="newName[kind].set($event)"
+        />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'settings.template' | t }}</mat-label>
+        <input
+          matInput
+          [name]="kind + '-template'"
+          autocomplete="off"
+          spellcheck="false"
+          [placeholder]="kind === 'rules' ? 'https://img.example.com/{path}' : '![{name}]({url})'"
+          [ngModel]="newTemplate[kind]()"
+          (ngModelChange)="newTemplate[kind].set($event)"
+        />
+        @if (problem(kind); as p) {
+          <mat-hint class="problem">{{ p | t }}</mat-hint>
+        } @else {
+          <mat-hint>{{ 'settings.template_hint_' + kind | t }}</mat-hint>
+        }
+      </mat-form-field>
+      <button
+        matButton
+        [disabled]="!newName[kind]().trim() || !newTemplate[kind]().trim() || !!problem(kind)"
+        (click)="add(kind)"
+      >
+        <mat-icon svgIcon="add" />{{ 'common.add' | t }}
+      </button>
+    </div>
+  }
+</section>

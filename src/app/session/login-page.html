@@ -1,0 +1,102 @@
+<div class="login">
+  <section class="card">
+    <div class="head">
+      <h1>{{ 'login.welcome' | t: { greeting: (greeting | t) } }}</h1>
+      <p class="muted">{{ 'login.subtitle' | t }}</p>
+    </div>
+
+    <ol class="steps">
+      <li>
+        {{ 'login.step_repo' | t: { repo: defaultRepo } }}
+        <a target="_blank" rel="noopener" [href]="createRepoUrl">{{
+          'login.step_repo_link' | t
+        }}</a>
+        <ul>
+          <li>{{ 'login.step_repo_branch' | t }}</li>
+        </ul>
+      </li>
+      <li>
+        {{ 'login.step_token' | t }}
+        <a target="_blank" rel="noopener" [href]="createTokenUrl">{{
+          'login.step_token_link' | t
+        }}</a>
+        <ul>
+          <li>{{ 'login.step_token_access' | t }}</li>
+          <li>{{ 'login.step_token_permission' | t }}</li>
+        </ul>
+      </li>
+      <li>{{ 'login.step_sign_in' | t }}</li>
+    </ol>
+
+    <div class="side">
+      <form (ngSubmit)="signIn()">
+        @if (fromLegacy) {
+          <p class="notice">
+            <mat-icon svgIcon="info" />
+            <span>{{ 'login.from_legacy' | t }}</span>
+          </p>
+        }
+        <mat-form-field>
+          <mat-label>{{ 'login.token' | t }}</mat-label>
+          <input
+            matInput
+            name="token"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="github_pat_…"
+            [disabled]="busy()"
+            [type]="showToken() ? 'text' : 'password'"
+            [ngModel]="token()"
+            (ngModelChange)="token.set($event)"
+          />
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            [attr.aria-label]="(showToken() ? 'login.hide_token' : 'login.show_token') | t"
+            (click)="showToken.set(!showToken())"
+          >
+            <mat-icon [svgIcon]="showToken() ? 'visibility-off' : 'visibility'" />
+          </button>
+        </mat-form-field>
+
+        <mat-form-field floatLabel="always">
+          <mat-label>{{ 'login.repos' | t }}</mat-label>
+          <input
+            matInput
+            name="repos"
+            autocomplete="off"
+            spellcheck="false"
+            [disabled]="busy()"
+            [placeholder]="defaultRepo"
+            [ngModel]="repoNames()"
+            (ngModelChange)="repoNames.set($event)"
+          />
+          <mat-hint>{{ 'login.repos_hint' | t: { repo: defaultRepo } }}</mat-hint>
+        </mat-form-field>
+
+        <mat-checkbox [disabled]="busy()" [checked]="skipCheck()" (change)="toggleSkip($event)">
+          {{ 'login.skip' | t }}
+        </mat-checkbox>
+
+        @if (error()) {
+          <p class="notice warn" role="alert" animate.enter="pg-enter">
+            <mat-icon svgIcon="error" />
+            <span>{{ error() }}</span>
+          </p>
+        }
+
+        @if (busy()) {
+          <mat-progress-bar mode="indeterminate" animate.enter="pg-enter-fade" />
+          <p class="muted" animate.enter="pg-enter-fade">{{ 'login.checking' | t }}</p>
+        }
+
+        <button matButton="filled" type="submit" [disabled]="busy()">
+          {{ 'login.sign_in' | t }}
+        </button>
+      </form>
+
+      <p class="muted small">{{ 'login.storage_note' | t }}</p>
+    </div>
+  </section>
+</div>

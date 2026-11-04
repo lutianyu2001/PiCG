@@ -1,0 +1,174 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shell {
+  display: grid;
+  grid-template-areas:
+    'top top'
+    'nav content';
+  grid-template-rows: 3.5rem 1fr;
+  grid-template-columns: 13rem 1fr;
+  height: 100%;
+  transition: grid-template-columns 300ms var(--pg-ease-standard);
+
+  // Collapsing only narrows the column: the icons and the toggle stay where they are, and the labels are cut off
+  // from the right and fade. 5rem puts the icons (0.75rem + 1rem from the left, 1.5rem wide) in the middle.
+  &.collapsed {
+    grid-template-columns: 5rem 1fr;
+
+    .nav-label {
+      opacity: 0;
+    }
+  }
+}
+
+.top-bar {
+  display: flex;
+  grid-area: top;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0 0.75rem 0 1rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+}
+
+.brand {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+
+  pg-logo {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.brand-name {
+  font: var(--mat-sys-title-large);
+  letter-spacing: 0.02em;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.account-head {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+.side-nav {
+  display: flex;
+  grid-area: nav;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  overflow: hidden;
+}
+
+.nav-item {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  gap: 0.75rem;
+  align-items: center;
+  height: 3rem;
+  padding: 0 1rem;
+  border-radius: var(--mat-sys-corner-full);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 200ms var(--pg-ease-standard),
+    color 200ms var(--pg-ease-standard);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+
+  &.active {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+  }
+}
+
+// Lined up with the icons of the navigation items above it, as sidebars usually do, so it stays in place when the
+// navigation collapses.
+.collapse {
+  align-self: flex-start;
+  margin-left: 0.5rem;
+}
+
+.nav-label {
+  transition: opacity 200ms var(--pg-ease-standard);
+}
+
+.content {
+  grid-area: content;
+  view-transition-name: content;
+  min-width: 0;
+  overflow: auto;
+}
+
+@media (max-width: 720px) {
+  .shell,
+  .shell.collapsed {
+    grid-template-areas:
+      'top'
+      'content'
+      'nav';
+    grid-template-rows: 3.5rem 1fr auto;
+    grid-template-columns: 1fr;
+  }
+
+  .side-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0.25rem 0.5rem calc(0.25rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    border-right: none;
+  }
+
+  .nav-item,
+  .shell.collapsed .nav-item {
+    flex: 1;
+    flex-direction: column;
+    gap: 0.125rem;
+    justify-content: center;
+    height: 3.5rem;
+    padding: 0;
+    border-radius: var(--mat-sys-corner-large);
+    font: var(--mat-sys-label-small);
+
+    &.active {
+      background: none;
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  .shell.collapsed .nav-label {
+    opacity: 1;
+  }
+
+  .side-nav .spacer,
+  .collapse {
+    display: none;
+  }
+}

@@ -1,0 +1,85 @@
+<div class="shell" [class.collapsed]="collapsed()">
+  <header class="top-bar">
+    <a class="brand" routerLink="/" [attr.aria-label]="'nav.home' | t">
+      <pg-logo />
+      <span class="brand-name">PiCG</span>
+    </a>
+    <span class="spacer"></span>
+    <button
+      matIconButton
+      [matTooltip]="themeLabel()"
+      [attr.aria-label]="themeLabel()"
+      (click)="toggleTheme()"
+    >
+      <mat-icon [svgIcon]="themeIcon()" />
+    </button>
+    <button
+      matIconButton
+      [matMenuTriggerFor]="languages"
+      [matTooltip]="'settings.language' | t"
+      [attr.aria-label]="'settings.language' | t"
+    >
+      <mat-icon svgIcon="language" />
+    </button>
+    <mat-menu #languages="matMenu" xPosition="before">
+      @for (option of languageOptions; track option.value) {
+        <button mat-menu-item (click)="setLanguage(option.value)">
+          <mat-icon [svgIcon]="appearance.value().language === option.value ? 'check' : 'blank'" />
+          {{ option.label ?? (option.key! | t) }}
+        </button>
+      }
+    </mat-menu>
+    @if (session.user(); as user) {
+      <button matIconButton [matMenuTriggerFor]="account" [attr.aria-label]="'account.menu' | t">
+        @if (user.avatarUrl) {
+          <img class="avatar" alt="" [src]="user.avatarUrl" />
+        } @else {
+          <mat-icon svgIcon="person" />
+        }
+      </button>
+      <mat-menu #account="matMenu" xPosition="before">
+        <div class="account-head">
+          <strong>{{ user.name || user.login }}</strong>
+          <span class="muted">{{ user.login }}</span>
+        </div>
+        <a mat-menu-item [href]="'https://github.com/' + user.login" target="_blank" rel="noopener">
+          <mat-icon svgIcon="open-in-new" />{{ 'account.github_profile' | t }}
+        </a>
+        <button mat-menu-item (click)="signOut()">
+          <mat-icon svgIcon="logout" />{{ 'account.sign_out' | t }}
+        </button>
+      </mat-menu>
+    }
+  </header>
+
+  <nav class="side-nav" [attr.aria-label]="'nav.label' | t">
+    @for (item of nav(); track item.label) {
+      <a
+        class="nav-item"
+        matRipple
+        routerLinkActive="active"
+        #rla="routerLinkActive"
+        matTooltipPosition="right"
+        [matTooltip]="item.label | t"
+        [matTooltipDisabled]="!collapsed()"
+        [routerLink]="item.path"
+      >
+        <mat-icon [svgIcon]="rla.isActive ? item.icon + '-fill' : item.icon" />
+        <span class="nav-label">{{ item.label | t }}</span>
+      </a>
+    }
+    <span class="spacer"></span>
+    <button
+      class="collapse"
+      matIconButton
+      [attr.aria-label]="(collapsed() ? 'nav.expand' : 'nav.collapse') | t"
+      (click)="toggleNav()"
+    >
+      <mat-icon [svgIcon]="collapsed() ? 'left-panel-open' : 'left-panel-close'" />
+    </button>
+  </nav>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

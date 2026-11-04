@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+dist
+public/wasm
+public/heif
+node_modules
+.angular
+README.md
+README

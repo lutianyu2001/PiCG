@@ -1,0 +1,17 @@
+PiCG
+Copyright 2026 Tianyu (Sky) Lu
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The built site includes image encoders from jSquash (https://github.com/jamsinclair/jSquash),
+licensed under the Apache License, Version 2.0, which are compiled from libwebp (BSD-3-Clause),
+libavif and libaom (BSD-2-Clause) and MozJPEG (IJG, BSD-3-Clause and zlib licenses). Their license
+files are copied next to the binaries in wasm/. Licenses of the other bundled packages are listed in
+3rdpartylicenses.txt of the built site.
+
+To convert HEIC and HEIF photos in browsers that cannot decode them, the built site loads libheif
+(https://github.com/strukturag/libheif, with libde265), built for the web by libheif-js
+(https://github.com/catdad-experiments/libheif-js) and licensed under the GNU Lesser General Public
+License, version 3. It is kept as separate files in heif/ (libheif.js, libheif.wasm), with its
+license in heif/LICENSE.libheif.txt, and is loaded only when such a photo is added; it can be
+replaced with another build of the same library.

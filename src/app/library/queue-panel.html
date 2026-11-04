@@ -1,0 +1,148 @@
+<section class="panel" [attr.aria-label]="'upload.queue' | t">
+  <header class="head">
+    <div class="title">
+      <h2>{{ 'upload.queue_title' | t: { count: queue.pending().length } }}</h2>
+      <span class="muted target" [title]="target()">
+        {{ 'upload.target' | t }} <code>{{ target() }}</code>
+      </span>
+    </div>
+    <button
+      matIconButton
+      [disabled]="queue.uploading()"
+      [attr.aria-label]="'upload.clear' | t"
+      (click)="queue.clear()"
+    >
+      <mat-icon svgIcon="close" />
+    </button>
+  </header>
+
+  <div class="options">
+    <mat-button-toggle-group
+      hideSingleSelectionIndicator
+      [attr.aria-label]="'upload.subfolder' | t"
+      [disabled]="queue.uploading()"
+      [value]="options().subfolder"
+      (change)="setSubfolder($event.value)"
+    >
+      <mat-button-toggle value="none">{{ 'upload.sub_none' | t }}</mat-button-toggle>
+      <mat-button-toggle value="time">{{ 'upload.sub_time' | t }}</mat-button-toggle>
+      <mat-button-toggle value="custom">{{ 'upload.sub_custom' | t }}</mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (options().subfolder === 'custom') {
+      <mat-form-field class="custom">
+        <mat-label>{{ 'upload.custom_name' | t }}</mat-label>
+        <input
+          matInput
+          name="custom-subfolder"
+          autocomplete="off"
+          [disabled]="queue.uploading()"
+          [ngModel]="options().customSubfolder"
+          (ngModelChange)="queue.setOptions({ customSubfolder: $event })"
+        />
+      </mat-form-field>
+    }
+    <div class="toggles">
+      <mat-slide-toggle
+        [disabled]="queue.uploading()"
+        [checked]="options().compress"
+        (change)="queue.setOptions({ compress: $event.checked })"
+      >
+        {{ 'upload.compress' | t }}
+      </mat-slide-toggle>
+      <mat-slide-toggle
+        [disabled]="queue.uploading()"
+        [checked]="options().watermark"
+        (change)="queue.setOptions({ watermark: $event.checked })"
+      >
+        {{ 'upload.watermark' | t }}
+      </mat-slide-toggle>
+    </div>
+  </div>
+
+  <ul class="items">
+    @for (item of queue.items(); track item.id) {
+      <li
+        class="item"
+        animate.enter="pg-enter"
+        animate.leave="pg-leave-item"
+        [class.failed]="item.state === 'failed'"
+      >
+        <img class="preview" alt="" [src]="item.previewUrl" />
+        <div class="body">
+          <div class="name-row">
+            @if (prefixOf(item)) {
+              <span class="ext">{{ prefixOf(item) }}</span>
+            }
+            <input
+              class="name"
+              [attr.aria-label]="'upload.file_name' | t"
+              [disabled]="item.state === 'uploading'"
+              [ngModel]="item.base"
+              (ngModelChange)="rename(item, $event)"
+            />
+            <span class="ext">{{ restOf(item) }}</span>
+          </div>
+          <div class="meta">
+            @switch (item.state) {
+              @case ('processing') {
+                <mat-progress-spinner diameter="14" mode="indeterminate" />
+                {{ 'upload.processing' | t }}
+              }
+              @case ('uploading') {
+                <mat-progress-spinner diameter="14" mode="indeterminate" />
+                {{ 'upload.uploading' | t }}
+              }
+              @default {
+                <span>{{ bytes(item.file.size) }}</span>
+                @if (item.processed && item.processed !== item.file) {
+                  <span>→ {{ bytes(item.processed.size) }}</span>
+                }
+                @if (item.relDir) {
+                  <span class="dir" [title]="item.relDir">{{ item.relDir }}/</span>
+                }
+              }
+            }
+          </div>
+          @if (item.error) {
+            <div class="error" animate.enter="pg-enter-fade">
+              {{ item.error.key | t: item.error.params }}
+            </div>
+          }
+        </div>
+        <button
+          matIconButton
+          [matMenuTriggerFor]="itemMenu"
+          [disabled]="item.state === 'uploading'"
+          [attr.aria-label]="'common.more' | t"
+        >
+          <mat-icon svgIcon="more-vert" />
+        </button>
+        <mat-menu #itemMenu="matMenu">
+          <button mat-menu-item (click)="queue.patch(item.id, { hash: !item.hash })">
+            <mat-icon [svgIcon]="item.hash ? 'check' : 'blank'" />{{ 'upload.add_hash' | t }}
+          </button>
+          @if (prefixEnabled()) {
+            <button mat-menu-item (click)="queue.patch(item.id, { prefix: !item.prefix })">
+              <mat-icon [svgIcon]="item.prefix ? 'check' : 'blank'" />{{
+                'upload.add_prefix' | t: { prefix: prefix() }
+              }}
+            </button>
+          }
+          <button mat-menu-item (click)="queue.remove(item.id)">
+            <mat-icon svgIcon="delete" />{{ 'upload.remove' | t }}
+          </button>
+        </mat-menu>
+      </li>
+    }
+  </ul>
+
+  <footer class="foot">
+    <button matButton [disabled]="queue.uploading()" (click)="queue.clear()">
+      {{ 'upload.clear' | t }}
+    </button>
+    <button matButton="filled" [disabled]="!queue.canUpload()" (click)="queue.upload()">
+      <mat-icon svgIcon="upload" />
+      {{ (queue.uploading() ? 'upload.uploading' : 'upload.upload') | t }}
+    </button>
+  </footer>
+</section>
