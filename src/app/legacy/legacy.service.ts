@@ -170,7 +170,7 @@ export class LegacyService {
     }
     this.pending.set(null)
     this.settings.setBlocked(false)
-    await this.settings.reloadSha()
+    await this.settings.reloadVersion()
     this.clearBrowser()
   }
 

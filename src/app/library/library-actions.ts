@@ -2,9 +2,9 @@ import { Injectable, inject, signal } from '@angular/core'
 import { MatDialog } from '@angular/material/dialog'
 import { firstValueFrom } from 'rxjs'
 import { Notify } from '../core/notify.service'
-import { errorKey } from '../github/github.client'
-import { Change, RepoApi } from '../github/repo-api'
-import { SessionStore } from '../session/session.store'
+import { errorKey } from '../storage/storage'
+import { ImageStorage } from '../storage/storage'
+import { StorageService } from '../storage/storage.service'
 import { ConfirmData, ConfirmDialog } from '../shared/confirm-dialog'
 import { PromptData, PromptDialog } from '../shared/prompt-dialog'
 import { ImportDialog } from './import-dialog'
@@ -16,9 +16,8 @@ import { PropertiesDialog } from './properties-dialog'
 /** What the library page can do to files, each with its dialogs and messages. */
 @Injectable({ providedIn: 'root' })
 export class LibraryActions {
-  private readonly api = inject(RepoApi)
+  private readonly storage = inject(StorageService)
   private readonly library = inject(LibraryStore)
-  private readonly session = inject(SessionStore)
   private readonly dialog = inject(MatDialog)
   private readonly notify = inject(Notify)
 
@@ -35,18 +34,17 @@ export class LibraryActions {
 
   private async run(
     paths: string[],
-    changes: Change[],
-    message: string,
+    change: (storage: ImageStorage) => Promise<void>,
     doneKey: string,
     params = {}
   ) {
-    const repo = this.session.repo()
-    if (!repo) {
+    const storage = this.storage.current()
+    if (!storage) {
       return false
     }
     this.mark(paths, true)
     try {
-      await this.api.commit(repo, changes, message)
+      await change(storage)
       await this.library.reload()
       this.notify.info(doneKey, params)
       return true
@@ -96,11 +94,7 @@ export class LibraryActions {
     }
     await this.run(
       [file.path],
-      [
-        { path: joinPath(file.dir, name), blob: file.sha },
-        { path: file.path, delete: true }
-      ],
-      'Rename image',
+      (storage) => storage.rename(file, joinPath(file.dir, name), 'Rename image'),
       'library.renamed'
     )
   }
@@ -121,8 +115,11 @@ export class LibraryActions {
     }
     return this.run(
       files.map((f) => f.path),
-      files.map((f) => ({ path: f.path, delete: true as const })),
-      files.length === 1 ? 'Delete image' : `Delete ${files.length} images`,
+      (storage) =>
+        storage.remove(
+          files,
+          files.length === 1 ? 'Delete image' : `Delete ${files.length} images`
+        ),
       files.length === 1 ? 'library.deleted_one' : 'library.deleted_many',
       { count: files.length }
     )

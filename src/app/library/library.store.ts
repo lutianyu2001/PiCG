@@ -1,12 +1,12 @@
-import { Injectable, computed, inject, signal } from '@angular/core'
-import { GitHubError } from '../github/github.client'
-import { RepoApi, RepoRef, TreeEntry } from '../github/repo-api'
+import { Injectable, computed, signal } from '@angular/core'
+import { ImageStorage, Listing } from '../storage/storage'
 
 export interface ImageFile {
   path: string
   name: string
   dir: string
-  sha: string
+  /** Changes with the content: the Git blob SHA or the R2 ETag. */
+  version: string
   size: number
 }
 
@@ -42,7 +42,9 @@ interface Index {
   files: Map<string, number>
 }
 
-function buildIndex(entries: TreeEntry[]): Index {
+const EMPTY: Listing = { files: [], folders: [], truncated: false }
+
+function buildIndex(listing: Listing): Index {
   const folders = new Map<string, Set<string>>([['', new Set()]])
   const images = new Map<string, ImageFile[]>()
   const paths = new Set<string>()
@@ -58,31 +60,29 @@ function buildIndex(entries: TreeEntry[]): Index {
       path = parent
     }
   }
-  for (const entry of entries) {
-    paths.add(entry.path)
-    if (entry.type === 'blob') {
-      const dir = parentOf(entry.path)
-      files.set(dir, (files.get(dir) ?? 0) + 1)
+  for (const folder of listing.folders) {
+    paths.add(folder)
+    if (!hidden(folder)) {
+      addFolder(folder)
     }
-    if (hidden(entry.path)) {
+  }
+  for (const file of listing.files) {
+    paths.add(file.path)
+    const dir = parentOf(file.path)
+    files.set(dir, (files.get(dir) ?? 0) + 1)
+    if (hidden(file.path) || !isImageName(baseName(file.path))) {
       continue
     }
-    if (entry.type === 'tree') {
-      addFolder(entry.path)
-      folders.get(parentOf(entry.path))!.add(entry.path)
-    } else if (entry.type === 'blob' && isImageName(baseName(entry.path))) {
-      const dir = parentOf(entry.path)
-      addFolder(dir)
-      const list = images.get(dir) ?? []
-      list.push({
-        path: entry.path,
-        name: baseName(entry.path),
-        dir,
-        sha: entry.sha,
-        size: entry.size ?? 0
-      })
-      images.set(dir, list)
-    }
+    addFolder(dir)
+    const list = images.get(dir) ?? []
+    list.push({
+      path: file.path,
+      name: baseName(file.path),
+      dir,
+      version: file.version,
+      size: file.size
+    })
+    images.set(dir, list)
   }
   return { folders, images, paths, files }
 }
@@ -92,10 +92,8 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
 /** The files of the repository in use and the folder being viewed. */
 @Injectable({ providedIn: 'root' })
 export class LibraryStore {
-  private readonly api = inject(RepoApi)
-
-  private ref: RepoRef | null = null
-  private readonly index = signal<Index>(buildIndex([]))
+  private storage: ImageStorage | null = null
+  private readonly index = signal<Index>(buildIndex(EMPTY))
   /** Folders created in the app that hold nothing yet, so Git does not know them. */
   private readonly localFolders = signal<Set<string>>(new Set())
 
@@ -130,41 +128,36 @@ export class LibraryStore {
     () => this.path() !== '' && !this.index().folders.has(this.path())
   )
 
-  async open(ref: RepoRef) {
-    this.ref = ref
+  async open(storage: ImageStorage) {
+    this.storage = storage
     this.path.set('')
     this.localFolders.set(new Set())
-    this.index.set(buildIndex([]))
+    this.index.set(buildIndex(EMPTY))
     this.loaded.set(false)
     await this.reload()
   }
 
   async reload() {
-    const ref = this.ref
-    if (!ref) {
+    const storage = this.storage
+    if (!storage) {
       return
     }
     this.loading.set(true)
     this.error.set(null)
     try {
-      const tree = await this.api.tree(ref)
-      if (this.ref !== ref) {
+      const listing = await storage.list()
+      if (this.storage !== storage) {
         return
       }
-      const index = buildIndex(tree.tree)
+      const index = buildIndex(listing)
       this.index.set(index)
-      this.truncated.set(tree.truncated)
-      // Local folders that now exist in Git no longer need to be remembered.
+      this.truncated.set(listing.truncated)
+      // Local folders that now exist in the storage no longer need to be remembered.
       this.localFolders.update((set) => new Set([...set].filter((f) => !index.folders.has(f))))
     } catch (err) {
-      // An empty repository has no tree yet; show it as empty.
-      if (err instanceof GitHubError && (err.kind === 'conflict' || err.kind === 'not_found')) {
-        this.index.set(buildIndex([]))
-      } else {
-        this.error.set(err)
-      }
+      this.error.set(err)
     } finally {
-      if (this.ref === ref) {
+      if (this.storage === storage) {
         this.loading.set(false)
         this.loaded.set(true)
       }

@@ -1,13 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core'
 import { Notify } from '../core/notify.service'
-import { errorKey } from '../github/github.client'
-import { RepoApi, bytesToBase64 } from '../github/repo-api'
+import { errorKey } from '../storage/storage'
 import { ImagePipeline, ProcessOptions } from '../imaging/image-pipeline.service'
 import { LinkService } from '../links/link.service'
-import { SessionStore } from '../session/session.store'
 import { Subfolder } from '../settings/settings.model'
 import { SettingsStore } from '../settings/settings.store'
 import { IncomingFile } from '../shared/file-intake'
+import { StorageService } from '../storage/storage.service'
 import { LibraryStore, joinPath, parentOf } from './library.store'
 import { cleanFolderPath, finalName, shortHash, splitName, timeFolder } from './naming'
 
@@ -40,17 +39,12 @@ export interface BatchOptions {
   watermark: boolean
 }
 
-/** At most this many files in one folder; an upload that would go past it fails for that folder. */
-export const FOLDER_FILE_LIMIT = 1000
-const PARALLEL_BLOBS = 4
-
 /** Images waiting to be uploaded to the repository in use, and the choices for this batch. */
 @Injectable({ providedIn: 'root' })
 export class UploadQueueStore {
-  private readonly api = inject(RepoApi)
+  private readonly storage = inject(StorageService)
   private readonly pipeline = inject(ImagePipeline)
   private readonly settingsStore = inject(SettingsStore)
-  private readonly session = inject(SessionStore)
   private readonly library = inject(LibraryStore)
   private readonly links = inject(LinkService)
   private readonly notify = inject(Notify)
@@ -230,10 +224,10 @@ export class UploadQueueStore {
     }
   }
 
-  /** Uploads every ready item in one commit, then copies their links. */
+  /** Uploads every ready item (in one commit, on GitHub), then copies the links of those uploaded. */
   async upload() {
-    const repo = this.session.repo()
-    if (!repo || this.uploading() || this.busy()) {
+    const storage = this.storage.current()
+    if (!storage || this.uploading() || this.busy()) {
       return
     }
     const batch = this.items().filter((i) => this.uploadable(i))
@@ -257,15 +251,16 @@ export class UploadQueueStore {
       go.push(item)
     }
 
-    // A folder may not hold more than FOLDER_FILE_LIMIT files; the whole part of the batch for it fails otherwise.
+    // A folder may not hold more files than the storage allows; the whole part of the batch for it fails otherwise.
+    const limit = storage.folderLimit
     const byFolder = new Map<string, QueueItem[]>()
     for (const item of go) {
       const dir = parentOf(this.path(item))
       byFolder.set(dir, [...(byFolder.get(dir) ?? []), item])
     }
-    for (const [dir, items] of byFolder) {
+    for (const [dir, items] of limit === null ? [] : byFolder) {
       const existing = this.library.fileCount(dir)
-      if (existing + items.length > FOLDER_FILE_LIMIT) {
+      if (existing + items.length > limit!) {
         for (const item of items) {
           this.patch(item.id, {
             state: 'failed',
@@ -275,7 +270,7 @@ export class UploadQueueStore {
                 dir: dir || '/',
                 existing: String(existing),
                 count: String(items.length),
-                limit: String(FOLDER_FILE_LIMIT)
+                limit: String(limit)
               }
             }
           })
@@ -291,27 +286,28 @@ export class UploadQueueStore {
     this.uploading.set(true)
     go.forEach((i) => this.patch(i.id, { state: 'uploading', error: null }))
     try {
-      const blobs = new Map<number, string>()
-      for (let i = 0; i < go.length; i += PARALLEL_BLOBS) {
-        await Promise.all(
-          go.slice(i, i + PARALLEL_BLOBS).map(async (item) => {
-            const bytes = new Uint8Array(await (item.processed ?? item.file).arrayBuffer())
-            blobs.set(item.id, await this.api.createBlob(repo, bytesToBase64(bytes)))
-          })
-        )
-      }
       const paths = go.map((item) => this.path(item))
-      await this.api.commit(
-        repo,
-        go.map((item, i) => ({ path: paths[i], blob: blobs.get(item.id)! })),
+      const results = await storage.upload(
+        go.map((item, i) => ({ path: paths[i], blob: item.processed ?? item.file })),
         go.length === 1 ? 'Upload image' : `Upload ${go.length} images`
       )
-      go.forEach((i) => this.remove(i.id))
-      await this.library.reload()
-      await this.links.copy(paths)
-    } catch (err) {
-      go.forEach((i) => this.patch(i.id, { state: 'failed', error: { key: errorKey(err) } }))
-      this.notify.error('upload.failed')
+      const uploaded: string[] = []
+      go.forEach((item, i) => {
+        const err = results.get(paths[i])
+        if (err) {
+          this.patch(item.id, { state: 'failed', error: { key: errorKey(err) } })
+        } else {
+          uploaded.push(paths[i])
+          this.remove(item.id)
+        }
+      })
+      if (uploaded.length < go.length) {
+        this.notify.error('upload.failed')
+      }
+      if (uploaded.length) {
+        await this.library.reload()
+        await this.links.copy(uploaded)
+      }
     } finally {
       this.uploading.set(false)
     }

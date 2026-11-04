@@ -3,7 +3,7 @@ import { MatButton } from '@angular/material/button'
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog'
 import { TranslatePipe } from '../core/i18n/i18n.service'
 import { Notify } from '../core/notify.service'
-import { errorKey } from '../github/github.client'
+import { errorKey } from '../storage/storage'
 import { LegacyService } from './legacy.service'
 
 /** Asks whether to keep settings of an earlier version in PiCG's format and delete the old files. */

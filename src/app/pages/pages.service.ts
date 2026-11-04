@@ -46,14 +46,15 @@ export class PagesService {
   })
   private ref: RepoRef | null = null
 
-  reset(ref: RepoRef) {
+  /** Starts over for a repository, or for no repository when the storage in use is not one. */
+  reset(ref: RepoRef | null) {
     this.ref = ref
     this.status.set({
       enabled: null,
       legacyBranch: false,
       domain: '',
       siteDomain: '',
-      base: defaultPagesBase(ref)
+      base: ref ? defaultPagesBase(ref) : ''
     })
   }
 

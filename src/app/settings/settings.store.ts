@@ -1,7 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core'
+import { Injectable, signal } from '@angular/core'
 import { readJson, writeJson } from '../core/storage'
-import { GitHubError } from '../github/github.client'
-import { RepoApi, RepoRef } from '../github/repo-api'
+import { ImageStorage, StorageError } from '../storage/storage'
 import {
   ParsedSettings,
   SETTINGS_PATH,
@@ -50,27 +49,25 @@ export function rebase(base: AppSettings, mine: AppSettings, theirs: AppSettings
 }
 
 interface RemoteState {
-  sha: string | undefined
+  version: string | undefined
   raw: Record<string, unknown>
   /** Settings as they are in the repository, for working out what changed locally. */
   base: AppSettings
 }
 
-const cacheKey = (ref: RepoRef) => `settings.${ref.owner}/${ref.name}@${ref.branch}`
+const cacheKey = (storage: ImageStorage) => `settings.${storage.id}`
 
 /**
- * Settings of the repository in use. They are cached on the device, read from `.picg/settings.toml` when the
- * repository is opened, and written back a few seconds after each change.
+ * Settings of the repository or bucket in use. They are cached on the device, read from `.picg/settings.toml` when
+ * the storage is opened, and written back a few seconds after each change.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
-  private readonly api = inject(RepoApi)
-
   private readonly state = signal<AppSettings>(defaultSettings())
   readonly settings = this.state.asReadonly()
   readonly sync = signal<SyncState>('idle')
 
-  private ref: RepoRef | null = null
+  private storage: ImageStorage | null = null
   private remote: RemoteState | null = null
   private timer: ReturnType<typeof setTimeout> | undefined
   private writing: Promise<void> | null = null
@@ -80,23 +77,23 @@ export class SettingsStore {
    * Opens the settings of a repository. Returns what was found there, so the caller can look for settings of
    * earlier versions when there is no file.
    */
-  async open(ref: RepoRef): Promise<'file' | 'none'> {
+  async open(storage: ImageStorage): Promise<'file' | 'none'> {
     await this.flush()
-    this.ref = ref
+    this.storage = storage
     this.remote = null
     this.blocked = false
     this.sync.set('idle')
-    const cached = readJson<unknown>(cacheKey(ref), null)
+    const cached = readJson<unknown>(cacheKey(storage), null)
     if (cached && typeof cached === 'object') {
       this.state.set(settingsFromTable(toFileShape(cached as AppSettings)))
     }
 
-    const file = await this.api.readText(ref, SETTINGS_PATH)
-    if (this.ref !== ref) {
+    const file = await storage.readText(SETTINGS_PATH)
+    if (this.storage !== storage) {
       return 'none'
     }
     if (!file) {
-      this.remote = { sha: undefined, raw: {}, base: this.state() }
+      this.remote = { version: undefined, raw: {}, base: this.state() }
       return 'none'
     }
     let parsed: ParsedSettings
@@ -104,21 +101,21 @@ export class SettingsStore {
       parsed = parseSettingsFile(file.text)
     } catch {
       // A damaged file is replaced on the next change instead of blocking the app.
-      this.remote = { sha: file.sha, raw: {}, base: this.state() }
+      this.remote = { version: file.version, raw: {}, base: this.state() }
       this.sync.set('error')
       return 'file'
     }
-    this.remote = { sha: file.sha, raw: parsed.raw, base: parsed.settings }
+    this.remote = { version: file.version, raw: parsed.raw, base: parsed.settings }
     this.state.set(parsed.settings)
-    writeJson(cacheKey(ref), parsed.settings)
+    writeJson(cacheKey(storage), parsed.settings)
     return 'file'
   }
 
   /** Uses settings from elsewhere (such as an import) without writing them to the repository. */
   replaceLocal(settings: AppSettings) {
     this.state.set(settings)
-    if (this.ref) {
-      writeJson(cacheKey(this.ref), settings)
+    if (this.storage) {
+      writeJson(cacheKey(this.storage), settings)
     }
   }
 
@@ -133,15 +130,15 @@ export class SettingsStore {
     const draft = structuredClone(this.state())
     change(draft)
     this.state.set(draft)
-    if (this.ref) {
-      writeJson(cacheKey(this.ref), draft)
+    if (this.storage) {
+      writeJson(cacheKey(this.storage), draft)
     }
     this.schedule()
   }
 
   /** Schedules a write, for example right after settings imported from an earlier version are accepted. */
   schedule() {
-    if (this.blocked || !this.ref) {
+    if (this.blocked || !this.storage) {
       return
     }
     clearTimeout(this.timer)
@@ -164,51 +161,50 @@ export class SettingsStore {
   }
 
   /** Records that the file was written by someone else, such as the legacy conversion commit. */
-  async reloadSha() {
-    if (!this.ref) {
+  async reloadVersion() {
+    if (!this.storage) {
       return
     }
-    const file = await this.api.readText(this.ref, SETTINGS_PATH)
-    this.remote = { sha: file?.sha, raw: this.remote?.raw ?? {}, base: this.state() }
+    const file = await this.storage.readText(SETTINGS_PATH)
+    this.remote = { version: file?.version, raw: this.remote?.raw ?? {}, base: this.state() }
   }
 
   private async write() {
     if (this.writing) {
       await this.writing
     }
-    const ref = this.ref
-    if (!ref || this.blocked) {
+    const storage = this.storage
+    if (!storage || this.blocked) {
       return
     }
     this.sync.set('saving')
-    this.writing = this.writeTo(ref).finally(() => (this.writing = null))
+    this.writing = this.writeTo(storage).finally(() => (this.writing = null))
     await this.writing
   }
 
-  private async writeTo(ref: RepoRef) {
+  private async writeTo(storage: ImageStorage) {
     const snapshot = this.state()
     try {
-      const sha = await this.api.writeText(
-        ref,
+      const version = await storage.writeText(
         SETTINGS_PATH,
         this.fileText(),
-        'Update settings',
-        this.remote?.sha
+        this.remote?.version,
+        'Update settings'
       )
-      this.remote = { sha, raw: this.remote?.raw ?? {}, base: snapshot }
+      this.remote = { version, raw: this.remote?.raw ?? {}, base: snapshot }
     } catch (err) {
-      if (!(err instanceof GitHubError) || !['conflict', 'validation'].includes(err.kind)) {
+      if (!(err instanceof StorageError) || !['conflict', 'validation'].includes(err.kind)) {
         this.sync.set('error')
         return
       }
       try {
-        await this.retryOnTheirs(ref, snapshot)
+        await this.retryOnTheirs(storage, snapshot)
       } catch {
         this.sync.set('error')
         return
       }
     }
-    if (this.ref === ref) {
+    if (this.storage === storage) {
       this.sync.set(this.state() === snapshot ? 'saved' : 'pending')
       if (this.state() !== snapshot) {
         this.schedule()
@@ -217,16 +213,16 @@ export class SettingsStore {
   }
 
   /** The file changed elsewhere: put the local changes on top of it and write once more. */
-  private async retryOnTheirs(ref: RepoRef, snapshot: AppSettings) {
-    const file = await this.api.readText(ref, SETTINGS_PATH)
+  private async retryOnTheirs(storage: ImageStorage, snapshot: AppSettings) {
+    const file = await storage.readText(SETTINGS_PATH)
     const theirs = file ? parseSettingsFile(file.text) : { settings: defaultSettings(), raw: {} }
     const merged = rebase(this.remote?.base ?? defaultSettings(), snapshot, theirs.settings)
     const text = stringifySettings(merged, theirs.raw)
-    const sha = await this.api.writeText(ref, SETTINGS_PATH, text, 'Update settings', file?.sha)
-    this.remote = { sha, raw: theirs.raw, base: merged }
+    const version = await storage.writeText(SETTINGS_PATH, text, file?.version, 'Update settings')
+    this.remote = { version, raw: theirs.raw, base: merged }
     if (this.state() === snapshot) {
       this.state.set(merged)
-      writeJson(cacheKey(ref), merged)
+      writeJson(cacheKey(storage), merged)
     }
   }
 }

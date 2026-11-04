@@ -1,28 +1,14 @@
 import { Injectable, signal } from '@angular/core'
+import { StorageError, StorageErrorKind } from '../storage/storage'
 
 export const API_BASE = 'https://api.github.com'
 const TIMEOUT_MS = 60_000
 
-export type GitHubErrorKind =
-  | 'network'
-  | 'rate_limit'
-  | 'unauthorized'
-  | 'forbidden'
-  | 'not_found'
-  | 'conflict'
-  | 'validation'
-  | 'too_large'
-  | 'blocked'
-  | 'server'
-  | 'unknown'
+export type GitHubErrorKind = StorageErrorKind
 
-export class GitHubError extends Error {
-  constructor(
-    readonly kind: GitHubErrorKind,
-    readonly status: number,
-    message: string
-  ) {
-    super(message)
+export class GitHubError extends StorageError {
+  constructor(kind: GitHubErrorKind, status: number, message: string) {
+    super('github', kind, status, message)
   }
 }
 
@@ -149,9 +135,4 @@ export class GitHubClient {
   delete<T>(path: string, body?: unknown, options?: RequestOptions) {
     return this.request<T>('DELETE', path, { ...options, body })
   }
-}
-
-/** Translation key for an error, for messages shown to the user. */
-export function errorKey(err: unknown): string {
-  return `api_error.${err instanceof GitHubError ? err.kind : 'unknown'}`
 }

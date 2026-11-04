@@ -7,7 +7,7 @@ import { MatInput } from '@angular/material/input'
 import { MatSelectModule } from '@angular/material/select'
 import { TranslatePipe } from '../core/i18n/i18n.service'
 import { Notify } from '../core/notify.service'
-import { errorKey } from '../github/github.client'
+import { errorKey } from '../storage/storage'
 import { LinkService } from '../links/link.service'
 import {
   PAGES_RULE,

@@ -8,15 +8,19 @@ import { LibraryStore } from '../library/library.store'
 import { UploadQueueStore } from '../library/upload-queue.store'
 import { PagesService } from '../pages/pages.service'
 import { SettingsStore } from '../settings/settings.store'
+import { GitHubStorage } from '../storage/github-storage'
+import { ImageStorage } from '../storage/storage'
+import { StorageService } from '../storage/storage.service'
 import { SessionStore } from './session.store'
 
 /**
- * Opens the repository in use: its files, settings and GitHub Pages status belong to it and change together when
- * the user switches repositories.
+ * Opens the repository or bucket in use: its files, settings and (for a repository) GitHub Pages status belong to
+ * it and change together when the user switches.
  */
 @Injectable({ providedIn: 'root' })
 export class Workspace {
   private readonly session = inject(SessionStore)
+  private readonly storage = inject(StorageService)
   private readonly library = inject(LibraryStore)
   private readonly settings = inject(SettingsStore)
   private readonly pages = inject(PagesService)
@@ -33,11 +37,11 @@ export class Workspace {
   start() {
     this.legacy.adoptBrowserAppearance()
     effect(() => {
-      const repo = this.session.repo()
+      const storage = this.storage.current()
       const loggedIn = this.session.loggedIn()
       untracked(() => {
-        if (loggedIn && repo) {
-          void this.open(repo)
+        if (loggedIn && storage) {
+          void this.open(storage)
         } else {
           this.opened = ''
         }
@@ -46,23 +50,24 @@ export class Workspace {
     addEventListener('pagehide', () => void this.settings.flush())
   }
 
-  private async open(repo: RepoRef) {
-    const key = `${repo.owner}/${repo.name}@${repo.branch}`
+  private async open(storage: ImageStorage) {
+    const key = storage.id
     if (key === this.opened) {
       return
     }
     this.opened = key
-    if (await this.followRenamedDefault(repo)) {
+    const repo = storage instanceof GitHubStorage ? storage.ref : null
+    if (repo && (await this.followRenamedDefault(repo))) {
       return
     }
     this.queue.clear()
     this.legacy.drop()
     this.pages.reset(repo)
     void this.pages.detect()
-    void this.library.open(repo)
+    void this.library.open(storage)
     try {
-      const found = await this.settings.open(repo)
-      if (found === 'none' && this.opened === key && (await this.legacy.adopt(repo))) {
+      const found = await this.settings.open(storage)
+      if (found === 'none' && repo && this.opened === key && (await this.legacy.adopt(repo))) {
         this.askToConvert(key)
       }
     } catch {

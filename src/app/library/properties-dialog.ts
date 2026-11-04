@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core'
 import { MatButton } from '@angular/material/button'
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog'
 import { I18n, TranslatePipe } from '../core/i18n/i18n.service'
-import { RepoApi } from '../github/repo-api'
 import { LinkService } from '../links/link.service'
-import { SessionStore } from '../session/session.store'
+import { StorageService } from '../storage/storage.service'
 import { ImageFile } from './library.store'
 
 export const formatBytes = (bytes: number) => {
@@ -39,9 +38,9 @@ export const formatBytes = (bytes: number) => {
         <dd>{{ dimensions() || '…' }}</dd>
         <dt>{{ 'library.prop_modified' | t }}</dt>
         <dd>{{ modified() || '…' }}</dd>
-        <dt>SHA</dt>
+        <dt>{{ storage?.kind === 'r2' ? 'ETag' : 'SHA' }}</dt>
         <dd>
-          <code>{{ file.sha }}</code>
+          <code>{{ file.version }}</code>
         </dd>
         <dt>{{ 'library.prop_link' | t }}</dt>
         <dd class="link">{{ links.url(file.path) }}</dd>
@@ -49,9 +48,11 @@ export const formatBytes = (bytes: number) => {
       <img class="probe" alt="" [src]="links.rawUrl(file.path)" (load)="measure($event)" />
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <a matButton target="_blank" rel="noopener" [href]="githubUrl()">{{
-        'library.open_on_github' | t
-      }}</a>
+      @if (webUrl) {
+        <a matButton target="_blank" rel="noopener" [href]="webUrl">{{
+          'library.open_on_github' | t
+        }}</a>
+      }
       <button matButton (click)="links.copy([file.path])">{{ 'links.copy' | t }}</button>
       <button matButton="filled" mat-dialog-close>{{ 'common.close' | t }}</button>
     </mat-dialog-actions>
@@ -79,33 +80,22 @@ export const formatBytes = (bytes: number) => {
 export class PropertiesDialog {
   protected readonly file = inject<ImageFile>(MAT_DIALOG_DATA)
   protected readonly links = inject(LinkService)
-  private readonly api = inject(RepoApi)
-  private readonly session = inject(SessionStore)
   private readonly i18n = inject(I18n)
+  protected readonly storage = inject(StorageService).current()
 
   protected readonly size = formatBytes(this.file.size)
   protected readonly dimensions = signal('')
   protected readonly modified = signal('')
-  protected readonly githubUrl = computed(() => {
-    const repo = this.session.repo()
-    return repo
-      ? `https://github.com/${repo.owner}/${repo.name}/blob/${repo.branch}/${this.file.path}`
-      : ''
-  })
+  protected readonly webUrl = this.storage?.webUrl(this.file) ?? ''
 
   constructor() {
-    const repo = this.session.repo()
-    if (repo) {
-      this.api.lastCommit(repo, this.file.path).then(
-        (commit) =>
-          this.modified.set(
-            commit
-              ? new Date(commit.commit.committer.date).toLocaleString(this.i18n.language())
-              : this.i18n.t('common.unknown')
-          ),
-        () => this.modified.set(this.i18n.t('common.unknown'))
-      )
-    }
+    this.storage?.modified(this.file).then(
+      (date) =>
+        this.modified.set(
+          date ? date.toLocaleString(this.i18n.language()) : this.i18n.t('common.unknown')
+        ),
+      () => this.modified.set(this.i18n.t('common.unknown'))
+    )
   }
 
   protected measure(event: Event) {
