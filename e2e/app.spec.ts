@@ -97,9 +97,10 @@ test('uploads, renames and deletes an image', async ({ page }) => {
     .poll(() => Object.keys(gh.files('pics')).find((p) => p.startsWith('my-photo.')))
     .toMatch(/^my-photo\.[0-9a-f]{8}\.png$/)
   const uploaded = Object.keys(gh.files('pics')).find((p) => p.startsWith('my-photo.'))!
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-    `https://github.com/tester/pics/raw/main/${uploaded}`
-  )
+  // The link is copied once the upload has answered, which can be after the file is stored.
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`https://github.com/tester/pics/raw/main/${uploaded}`)
   await expect(queue(page)).toHaveCount(0)
 
   // Rename keeps the blob.

@@ -63,6 +63,10 @@ The Angular CLI needs Node.js ≥24.15; the pnpm-managed Node.js 24.22.2 (devEng
   library's folder index first linked a folder to its parent only when it created the parent, which Git's folder
   entries hid; with R2, `2026/11/a.png` left `2026` out of the root. Code that builds folders from paths must link
   every level. The R2 end-to-end tests (`e2e/r2.spec.ts`) cover it.
+- A fake API sees a file as stored as soon as the request arrives, before the app has its answer, so what the app
+  does after an upload (copying the link) may not have happened yet: tests poll for it. The clipboard is shared by
+  all tests of a run, so reading it too early returns an earlier test's link; on the GitHub runner the R2 upload
+  test failed this way while it passed locally (Playwright 1.64.1, 2026-11-09).
 - In @angular/material 22.2.5 the buttons of a single-selection mat-button-toggle-group have the role radio, not
   button; tests find the sign-in tabs with getByRole('radio').
 

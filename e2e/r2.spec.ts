@@ -62,9 +62,10 @@ test('uploads, renames and deletes an image in an R2 bucket', async ({ page }) =
   // A taken name is refused by R2 itself, and the image is served with its own type.
   expect(r2.puts.get(uploaded)?.['if-none-match']).toBe('*')
   expect(r2.puts.get(uploaded)?.['content-type']).toBe('image/png')
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-    `https://pics.img.test/${uploaded}`
-  )
+  // The link is copied once the upload has answered, which can be after the file is stored.
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`https://pics.img.test/${uploaded}`)
   const card = page.locator('pg-image-card', { hasText: uploaded })
   await expect(card.locator('img')).toHaveJSProperty('naturalWidth', 1)
 
