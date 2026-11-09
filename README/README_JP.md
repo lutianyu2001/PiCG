@@ -190,10 +190,10 @@ pnpm e2e
 スモークテストは同じ流れを実際の GitHub API に対して、テスト用リポジトリの一時ブランチ上で実行し、終了後にそのブランチを削除します：
 
 1. テスト用リポジトリだけにアクセスできる Fine-grained token を作成し、**Contents** を **Read and write** にします。
-2. リポジトリの外のファイルに保存します。例：
+2. リポジトリの外の任意のファイルに保存します。以下ではそのパスを `<TOKEN_FILE>` と書きます：
 
    ```bash
-   mkdir -p ~/.config/picg && read -rsp 'Token: ' T && printf %s "$T" > ~/.config/picg/e2e-token && chmod 600 ~/.config/picg/e2e-token && echo saved
+   read -rsp 'Token: ' T && printf %s "$T" > <TOKEN_FILE> && chmod 600 <TOKEN_FILE> && echo saved
    ```
 
    プロンプトに token を貼り付けます（表示されません）。入力を待つコマンドなので、通常のターミナルで実行してください。
@@ -201,13 +201,20 @@ pnpm e2e
 3. 実行します：
 
    ```bash
-   PICG_E2E_TOKEN_FILE=~/.config/picg/e2e-token PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
+   PICG_E2E_TOKEN_FILE=<TOKEN_FILE> PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
    ```
 
    失敗すると、テストはページの内容と失敗したリクエストを表示し、テキストのレポートを `test-results/real/` に残します。
    レポート内の token は `<token>` に置き換えられます。trace、スクリーンショット、動画はどれも token を含むため記録しません。
 
-GitHub Actions では、`CI` workflow が push と pull request のたびに単体テストとエンドツーエンドテストを実行します。手動で起動して **real** にチェックを入れると、`PICG_E2E_TOKEN` シークレットと `PICG_E2E_REPO` 変数を使ってスモークテストも実行します。
+GitHub Actions では、`CI` workflow が push と pull request のたびに単体テストとエンドツーエンドテストを実行します。手動で起動して **real** にチェックを入れると、`PICG_E2E_TOKEN` シークレットと `PICG_E2E_REPO` 変数を使ってスモークテストも実行します。リポジトリのディレクトリで一度だけ設定します。最初のコマンドが token の入力を求めます：
+
+```bash
+gh secret set PICG_E2E_TOKEN
+gh variable set PICG_E2E_REPO --body <OWNER>/<REPO>
+```
+
+設定しない場合、スモークテストはスキップされ、実行結果は成功のままです。
 
 ## 互換性
 

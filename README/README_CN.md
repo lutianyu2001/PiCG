@@ -190,10 +190,10 @@ pnpm e2e
 冒烟测试对着真实的 GitHub API 跑同样的流程，在测试仓库的一个临时分支上进行，结束后删除该分支：
 
 1. 创建一个只能访问测试仓库的 Fine-grained token，把 **Contents** 设为 **Read and write**。
-2. 把它保存到仓库以外的文件中，例如：
+2. 把它保存到仓库以外的一个文件中，路径自定，下面记作 `<TOKEN_FILE>`：
 
    ```bash
-   mkdir -p ~/.config/picg && read -rsp 'Token: ' T && printf %s "$T" > ~/.config/picg/e2e-token && chmod 600 ~/.config/picg/e2e-token && echo saved
+   read -rsp 'Token: ' T && printf %s "$T" > <TOKEN_FILE> && chmod 600 <TOKEN_FILE> && echo saved
    ```
 
    在提示后粘贴 token，屏幕上不会显示。这条命令要等待输入，请在普通终端里运行。
@@ -201,13 +201,20 @@ pnpm e2e
 3. 运行：
 
    ```bash
-   PICG_E2E_TOKEN_FILE=~/.config/picg/e2e-token PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
+   PICG_E2E_TOKEN_FILE=<TOKEN_FILE> PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
    ```
 
    失败时，测试会打印页面内容和失败的请求，并把文本报告保留在 `test-results/real/`，其中的 token 已替换为 `<token>`。
    测试不记录 trace、截图和视频，因为它们都会包含 token。
 
-在 GitHub Actions 中，`CI` workflow 会在每次 push 和 pull request 时运行单元测试和端到端测试。手动触发并勾选 **real** 时，它还会用 `PICG_E2E_TOKEN` secret 和 `PICG_E2E_REPO` 变量运行冒烟测试。
+在 GitHub Actions 中，`CI` workflow 会在每次 push 和 pull request 时运行单元测试和端到端测试。手动触发并勾选 **real** 时，它还会用 `PICG_E2E_TOKEN` secret 和 `PICG_E2E_REPO` 变量运行冒烟测试。在仓库目录里设置一次即可，第一条命令会提示你粘贴 token：
+
+```bash
+gh secret set PICG_E2E_TOKEN
+gh variable set PICG_E2E_REPO --body <OWNER>/<REPO>
+```
+
+没有设置时，冒烟测试会被跳过，运行结果仍然是通过。
 
 ## 兼容性
 

@@ -190,10 +190,10 @@ The unit tests cover the settings file, settings merging, link rules, file namin
 The smoke test runs the same flow against the real GitHub API, on a temporary branch of a repository that it deletes afterwards:
 
 1. Create a fine-grained token limited to a test repository, with **Contents** set to **Read and write**.
-2. Save it to a file outside the repository, for example:
+2. Save it to a file of your choice outside the repository, `<TOKEN_FILE>` below:
 
    ```bash
-   mkdir -p ~/.config/picg && read -rsp 'Token: ' T && printf %s "$T" > ~/.config/picg/e2e-token && chmod 600 ~/.config/picg/e2e-token && echo saved
+   read -rsp 'Token: ' T && printf %s "$T" > <TOKEN_FILE> && chmod 600 <TOKEN_FILE> && echo saved
    ```
 
    Paste the token at the prompt; it is not shown. Run this in an ordinary terminal, since the command waits for
@@ -202,13 +202,21 @@ The smoke test runs the same flow against the real GitHub API, on a temporary br
 3. Run it:
 
    ```bash
-   PICG_E2E_TOKEN_FILE=~/.config/picg/e2e-token PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
+   PICG_E2E_TOKEN_FILE=<TOKEN_FILE> PICG_E2E_REPO=<OWNER>/<REPO> pnpm e2e:real
    ```
 
    On failure, the test prints the page and the failed requests, and keeps its text report in `test-results/real/`,
    with the token replaced by `<token>`. It records no trace, screenshot or video, since each would hold the token.
 
 In GitHub Actions, the `CI` workflow runs the unit and end-to-end tests on every push and pull request. Started by hand with **real** checked, it also runs the smoke test, using the `PICG_E2E_TOKEN` secret and the `PICG_E2E_REPO` variable.
+Set them once, in the checkout; the first command asks for the token:
+
+```bash
+gh secret set PICG_E2E_TOKEN
+gh variable set PICG_E2E_REPO --body <OWNER>/<REPO>
+```
+
+Without them, the smoke test is skipped and the run still passes.
 
 ## Compatibility
 
